@@ -1,0 +1,5 @@
+You are an expert Next.js 16, React 19, and Tailwind developer.
+Always use the App Router (src/app).
+Always refer to docs/ARCHITECTURE.md for data models and folder structure before generating code.
+We are using Prisma as our ORM and Clerk for authentication.
+Never use client-side state (like Zustand or Redux) for database data; always prefer React Server Components and Server Actions.
