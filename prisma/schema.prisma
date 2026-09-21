@@ -1,0 +1,74 @@
+// 
+generator client {
+  provider = "prisma-client"
+  output   = "../src/app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ──────────────────────────────
+// Enums
+// ──────────────────────────────
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETE
+}
+
+// ──────────────────────────────
+// Models
+// ──────────────────────────────
+
+/// Mirrors the Clerk user. Synced via Clerk webhook, not created directly by app logic.
+model User {
+  id        String   @id // Clerk userId (e.g. "user_2abc..."), used as-is — no separate internal ID
+  email     String   @unique
+  name      String?
+  imageUrl  String?
+
+  projects  Project[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@map("users")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tasks       Task[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, createdAt]) // supports dashboard "most recent first" queries
+  @@map("projects")
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+
+  projectId   String
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, status]) // supports "tasks by status within project" queries
+  @@map("tasks")
+}
