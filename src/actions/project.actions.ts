@@ -145,9 +145,11 @@ export async function deleteProject(
 export async function getProjects(): Promise<
   ActionResult<(Project & { taskCount: number; completedCount: number })[]>
 > {
+  // auth guard
   const { userId } = await auth();
   if (!userId) return { success: false, error: "Unauthorized" };
 
+  // fetch projects and total tasks count - database query(operations)
   try {
     const projects = await prisma.project.findMany({
       where: { userId },
@@ -163,9 +165,10 @@ export async function getProjects(): Promise<
           where: { projectId: project.id, status: "COMPLETE" },
         });
         return { ...project, taskCount: project._count.tasks, completedCount };
-      })
+      }),
     );
 
+    // standard response(ActionResult object)
     return { success: true, data: withCompleted };
   } catch (error) {
     console.error("Failed to fetch projects:", error);
