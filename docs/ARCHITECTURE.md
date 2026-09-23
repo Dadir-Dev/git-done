@@ -121,6 +121,7 @@ model Task {
 ```
 
 **Design notes:**
+
 - **Cascades:** Deleting a `User` cascades to `Project`, which cascades to `Task` — no orphaned rows possible, matches the MVP's "delete project" / account-deletion behavior.
 - **IDs:** `User.id` stores the Clerk `userId` directly (no extra join needed on every request). `Project`/`Task` use `cuid()` — collision-resistant, sortable-ish, no DB round-trip to generate like a serial int.
 - **No soft deletes in MVP** — deletions are hard deletes, consistent with "Strictly Out-of-Scope" (no audit/history features).
@@ -168,14 +169,14 @@ project-tracker/
 │   │   ├── project.actions.ts                  # "use server" — Project CRUD
 │   │   └── task.actions.ts                     # "use server" — Task CRUD
 │   ├── lib/
-│   │   ├── db.ts                                # Prisma client singleton
+│   │   ├── prisma.ts                                # Prisma client singleton
 │   │   ├── utils.ts                             # cn(), formatting helpers
 │   │   └── validations/
 │   │       ├── project.schema.ts                # Zod schemas
 │   │       └── task.schema.ts
 │   └── types/
 │       └── index.ts                             # shared TS types (ActionResult<T>, etc.)
-├── middleware.ts                                 # Clerk route protection
+├── proxy.ts                                 # Clerk route protection
 ├── .env
 ├── next.config.mjs
 ├── tailwind.config.ts
@@ -193,8 +194,8 @@ All actions live under `"use server"` files, authenticate via Clerk's `auth()`, 
 ```typescript
 // types/index.ts
 export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+	| { success: true; data: T }
+	| { success: false; error: string };
 ```
 
 ### `actions/project.actions.ts`
@@ -204,29 +205,27 @@ export type ActionResult<T> =
 
 /** Creates a new project owned by the current user. */
 async function createProject(
-  input: CreateProjectInput
+	input: CreateProjectInput,
 ): Promise<ActionResult<Project>>;
 
 /** Returns all projects owned by the current user, with task counts for dashboard progress display. */
 async function getProjects(): Promise<
-  ActionResult<(Project & { taskCount: number; completedCount: number })[]>
+	ActionResult<(Project & { taskCount: number; completedCount: number })[]>
 >;
 
 /** Returns a single project (with its tasks) if owned by the current user. */
 async function getProjectById(
-  projectId: string
+	projectId: string,
 ): Promise<ActionResult<Project & { tasks: Task[] }>>;
 
 /** Updates a project's name/description. Ownership is verified before the write. */
 async function updateProject(
-  projectId: string,
-  input: UpdateProjectInput
+	projectId: string,
+	input: UpdateProjectInput,
 ): Promise<ActionResult<Project>>;
 
 /** Deletes a project (and its tasks, via cascade). Ownership is verified before the write. */
-async function deleteProject(
-  projectId: string
-): Promise<ActionResult<void>>;
+async function deleteProject(projectId: string): Promise<ActionResult<void>>;
 ```
 
 ### `actions/task.actions.ts`
@@ -236,32 +235,30 @@ async function deleteProject(
 
 /** Creates a task within a project. Verifies the parent project belongs to the current user. */
 async function createTask(
-  projectId: string,
-  input: CreateTaskInput
+	projectId: string,
+	input: CreateTaskInput,
 ): Promise<ActionResult<Task>>;
 
 /** Returns all tasks for a project, optionally filtered by status. */
 async function getTasksByProject(
-  projectId: string,
-  status?: TaskStatus
+	projectId: string,
+	status?: TaskStatus,
 ): Promise<ActionResult<Task[]>>;
 
 /** Updates a task's title/description/status. Ownership verified via the parent project's userId. */
 async function updateTask(
-  taskId: string,
-  input: UpdateTaskInput
+	taskId: string,
+	input: UpdateTaskInput,
 ): Promise<ActionResult<Task>>;
 
 /** Convenience action for the common case: just flipping status (e.g. checkbox toggle in UI). */
 async function updateTaskStatus(
-  taskId: string,
-  status: TaskStatus
+	taskId: string,
+	status: TaskStatus,
 ): Promise<ActionResult<Task>>;
 
 /** Deletes a task. Ownership verified via the parent project's userId. */
-async function deleteTask(
-  taskId: string
-): Promise<ActionResult<void>>;
+async function deleteTask(taskId: string): Promise<ActionResult<void>>;
 ```
 
 **Ownership check pattern (applies to every action above):** since `Task` has no direct `userId`, ownership is verified by joining through `project.userId === auth().userId` in the `where` clause of the Prisma query itself (not as a separate check) — this ensures a user can never even probe for the existence of another user's data via ID guessing.
@@ -276,8 +273,8 @@ async function deleteTask(
 import { z } from "zod";
 
 export const createProjectSchema = z.object({
-  name: z.string().trim().min(1, "Project name is required").max(100),
-  description: z.string().trim().max(500).optional(),
+	name: z.string().trim().min(1, "Project name is required").max(100),
+	description: z.string().trim().max(500).optional(),
 });
 
 export const updateProjectSchema = createProjectSchema.partial();
@@ -294,9 +291,9 @@ import { z } from "zod";
 export const taskStatusEnum = z.enum(["TODO", "IN_PROGRESS", "COMPLETE"]);
 
 export const createTaskSchema = z.object({
-  title: z.string().trim().min(1, "Task title is required").max(200),
-  description: z.string().trim().max(1000).optional(),
-  status: taskStatusEnum.default("TODO"),
+	title: z.string().trim().min(1, "Task title is required").max(200),
+	description: z.string().trim().max(1000).optional(),
+	status: taskStatusEnum.default("TODO"),
 });
 
 export const updateTaskSchema = createTaskSchema.partial();
@@ -313,6 +310,7 @@ export type TaskStatus = z.infer<typeof taskStatusEnum>;
 ## 6. Explicitly Deferred (Architecture-Level)
 
 Consistent with the PRD's out-of-scope list, this architecture **intentionally excludes**:
+
 - Any REST/GraphQL API layer (Server Actions only)
 - Role/permission tables (single-owner model — `Project.userId` is the only access control needed)
 - Soft-delete columns, audit logs, or history tables
