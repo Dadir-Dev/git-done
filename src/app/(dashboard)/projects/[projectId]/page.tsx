@@ -9,6 +9,7 @@ import {
   deleteTask,
 } from "@/src/actions/task.actions";
 import { notFound, redirect } from "next/navigation";
+import DeleteConfirmationForm from "./delete-confirmation-form";
 
 export default async function ProjectDetailPage({
   params,
@@ -63,6 +64,55 @@ export default async function ProjectDetailPage({
             {project.tasks.length === 1 ? "task" : "tasks"}
           </div>
         </header>
+
+        <section className="mb-6 rounded-4xl border border-[#dce5dd] bg-white p-6 shadow-[0_20px_60px_-40px_#17231e] sm:p-9">
+          <div className="mb-8 border-b border-[#e5ebe6] pb-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#78907e]">
+              Project settings
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
+              Edit details
+            </h2>
+          </div>
+          <form action={handleUpdateProject} className="space-y-6">
+            <label className="block space-y-2 text-sm font-medium text-[#405048]">
+              Name
+              <input
+                name="name"
+                defaultValue={project.name}
+                required
+                maxLength={100}
+                className="w-full rounded-xl border border-[#d7e1d8] bg-[#fbfcfa] px-4 py-3 text-base text-[#17231e] outline-none transition focus:border-[#779e78] focus:ring-4 focus:ring-[#edf6df]"
+              />
+            </label>
+            <label className="block space-y-2 text-sm font-medium text-[#405048]">
+              Description
+              <textarea
+                name="description"
+                defaultValue={project.description ?? ""}
+                rows={4}
+                maxLength={500}
+                placeholder="What is this project trying to accomplish?"
+                className="w-full resize-none rounded-xl border border-[#d7e1d8] bg-[#fbfcfa] px-4 py-3 text-base text-[#17231e] outline-none transition focus:border-[#779e78] focus:ring-4 focus:ring-[#edf6df]"
+              />
+            </label>
+            <div className="flex justify-end border-t border-[#e5ebe6] pt-6">
+              <button
+                type="submit"
+                className="rounded-xl bg-[#173329] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#285341]"
+              >
+                Save changes
+              </button>
+            </div>
+          </form>
+          <div className="mt-6 border-t border-[#e5ebe6] pt-6">
+            <DeleteConfirmationForm
+              action={handleDeleteProject}
+              itemName={project.name}
+              buttonLabel="Delete project"
+            />
+          </div>
+        </section>
 
         <section className="grid gap-6 lg:grid-cols-[0.85fr_1.5fr]">
           <aside className="rounded-4xl bg-[#173329] p-7 text-[#f4f7f2] shadow-[0_24px_60px_-30px_#173329] sm:p-8">
@@ -140,19 +190,29 @@ export default async function ProjectDetailPage({
                           {task.status.replace("_", " ")}
                         </span>
                       </div>
-                      <form
-                        action={async () => {
-                          "use server";
-                          await updateTaskStatus(task.id, next);
-                        }}
-                      >
-                        <button
-                          type="submit"
-                          className="w-full rounded-xl border border-[#cfdbd1] px-4 py-2.5 text-sm font-semibold text-[#405048] transition hover:border-[#779e78] hover:bg-[#f5f8f4] sm:w-auto"
+                      <div className="flex flex-col items-stretch gap-3 sm:items-end">
+                        <form
+                          action={async () => {
+                            "use server";
+                            await updateTaskStatus(task.id, next);
+                          }}
                         >
-                          Advance status
-                        </button>
-                      </form>
+                          <button
+                            type="submit"
+                            className="w-full rounded-xl border border-[#cfdbd1] px-4 py-2.5 text-sm font-semibold text-[#405048] transition hover:border-[#779e78] hover:bg-[#f5f8f4] sm:w-auto"
+                          >
+                            Advance status
+                          </button>
+                        </form>
+                        <DeleteConfirmationForm
+                          action={async () => {
+                            "use server";
+                            await deleteTask(task.id);
+                          }}
+                          itemName={task.title}
+                          buttonLabel="Delete"
+                        />
+                      </div>
                     </li>
                   );
                 })}
