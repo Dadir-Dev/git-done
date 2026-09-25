@@ -129,7 +129,7 @@ function ProjectDialog({
   );
 }
 
-export default function DashboardWorkspace({
+export default function ProjectsListWorkspace({
   projects,
 }: {
   projects: ProjectSummary[];
@@ -159,11 +159,11 @@ export default function DashboardWorkspace({
               A focused view of the work you&apos;re moving forward.
             </p>
           </div>
-          <span className="rounded-md border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-zinc-400">
+          <span className="rounded-md border border-white/10 bg-white/8 px-3 py-1.5 text-xs font-medium text-zinc-400">
             {projects.length} {projects.length === 1 ? "project" : "projects"}
           </span>
         </div>
-        <section className="mt-8 overflow-hidden rounded-xl border border-white/[0.08] bg-[#161618]">
+        <section className="mt-8 overflow-hidden rounded-xl border border-white/8 bg-[#161618]">
           <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3">
             <h2 className="text-sm font-medium text-zinc-200">All projects</h2>
             <span className="text-xs text-zinc-500">Progress</span>
@@ -201,7 +201,7 @@ export default function DashboardWorkspace({
                           </span>
                           <span>{percent}%</span>
                         </div>
-                        <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.08]">
+                        <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/8">
                           <div
                             className="h-full rounded-full bg-brand transition-all"
                             style={{ width: `${percent}%` }}
@@ -220,7 +220,7 @@ export default function DashboardWorkspace({
               })}
             </ul>
           : <div className="flex min-h-72 flex-col items-center justify-center px-6 text-center">
-              <span className="grid size-10 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-xl text-brand-text">
+              <span className="grid size-10 place-items-center rounded-lg border border-white/10 bg-white/3 text-xl text-brand-text">
                 +
               </span>
               <h3 className="mt-4 text-sm font-medium text-zinc-200">

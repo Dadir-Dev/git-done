@@ -12,6 +12,7 @@ import {
 import { ActionResult } from "@/src/types";
 import { Project, type Task } from "@/src/app/generated/prisma/client";
 import { Prisma } from "@/src/app/generated/prisma/client";
+import { ensureAppUser } from "@/src/lib/ensure-app-user";
 
 export async function createProject(
   input: CreateProjectInput,
@@ -32,6 +33,8 @@ export async function createProject(
   }
 
   try {
+    await ensureAppUser(userId);
+
     const project = await prisma.project.create({
       data: {
         ...parsed.data,
@@ -40,6 +43,7 @@ export async function createProject(
     });
 
     revalidatePath("/dashboard");
+    revalidatePath("/projects");
 
     return { success: true, data: project };
   } catch (error) {
@@ -100,6 +104,7 @@ export async function updateProject(
     });
 
     revalidatePath("/dashboard");
+    revalidatePath("/projects");
     revalidatePath(`/projects/${projectId}`);
     return { success: true, data: project };
   } catch (error) {
@@ -128,6 +133,7 @@ export async function deleteProject(
       where: { id: projectId, userId },
     });
     revalidatePath("/dashboard");
+    revalidatePath("/projects");
     return { success: true, data: undefined };
   } catch (error) {
     if (
