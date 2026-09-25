@@ -1,9 +1,9 @@
 import { getProjects } from "@/src/actions/project.actions";
-import DashboardWorkspace from "@/src/components/dashboard-workspace";
+import DashboardOverview from "@/src/components/dashboard-overview";
 
 export default async function DashboardPage() {
   const result = await getProjects();
   const projects = result.success ? result.data : [];
 
-  return <DashboardWorkspace projects={projects} />;
+  return <DashboardOverview projects={projects} />;
 }
