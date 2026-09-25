@@ -1,17 +1,10 @@
 "use client";
 
 import { createProject } from "@/src/actions/project.actions";
+import type { ProjectSummary } from "@/src/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState, useTransition } from "react";
-
-type ProjectSummary = {
-  id: string;
-  name: string;
-  description: string | null;
-  taskCount: number;
-  completedCount: number;
-};
 
 function ProjectDialog({
   open,
