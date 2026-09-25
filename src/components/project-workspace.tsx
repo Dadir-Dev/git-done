@@ -6,6 +6,7 @@ import {
   deleteTask,
   updateTaskStatus,
 } from "@/src/actions/task.actions";
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState, useTransition } from "react";
@@ -92,7 +93,7 @@ export default function ProjectWorkspace({ project }: { project: Project }) {
     <main className="min-h-screen">
       <header className="flex min-h-15 items-center justify-between border-b border-white/[0.07] px-5 pl-15 lg:px-7">
         <Link
-          href="/dashboard"
+          href="/projects"
           className="text-sm text-zinc-400 transition hover:text-zinc-100"
         >
           ‹ Projects
@@ -126,9 +127,11 @@ export default function ProjectWorkspace({ project }: { project: Project }) {
             </p>
           </div>
           <button
+            type="button"
             onClick={() => setDialog("delete")}
-            className="h-8 text-xs font-medium text-zinc-500 hover:text-red-400"
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-red-400/20 bg-red-400/10 px-3 text-xs font-medium text-red-300 transition hover:border-red-400/40 hover:bg-red-400/15 hover:text-red-200"
           >
+            <Trash2 size={15} aria-hidden="true" />
             Delete project
           </button>
         </div>
@@ -215,12 +218,14 @@ export default function ProjectWorkspace({ project }: { project: Project }) {
                         <option value="COMPLETE">Complete</option>
                       </select>
                       <button
+                        type="button"
                         aria-label={`Delete ${task.title}`}
+                        title={`Delete ${task.title}`}
                         disabled={pending}
                         onClick={() => run(() => deleteTask(task.id), false)}
-                        className="grid size-8 place-items-center rounded-md text-zinc-600 hover:bg-red-400/10 hover:text-red-400 disabled:opacity-50"
+                        className="grid size-8 place-items-center rounded-md border border-transparent text-red-400 transition hover:border-red-400/20 hover:bg-red-400/10 hover:text-red-400 lg:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        ×
+                        <Trash2 size={15} aria-hidden="true" />
                       </button>
                     </li>
                   ))}
@@ -239,6 +244,7 @@ export default function ProjectWorkspace({ project }: { project: Project }) {
           <p className="mt-1 text-sm text-zinc-400">
             Start with a small, actionable next step.
           </p>
+          {/* Form of creating a task */}
           <form
             className="mt-6 space-y-4"
             onSubmit={(event: FormEvent<HTMLFormElement>) => {
@@ -384,16 +390,18 @@ export default function ProjectWorkspace({ project }: { project: Project }) {
               Cancel
             </button>
             <button
+              type="button"
               disabled={pending}
               onClick={() =>
                 run(async () => {
                   const result = await deleteProject(project.id);
-                  if (result.success) router.push("/dashboard");
+                  if (result.success) router.push("/projects");
                   return result;
                 })
               }
-              className="h-9 rounded-md bg-red-400 px-4 text-sm font-semibold text-zinc-950 disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-red-400 px-4 text-sm font-semibold text-zinc-950 transition hover:bg-red-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              <Trash2 size={15} aria-hidden="true" />
               {pending ? "Deleting…" : "Delete project"}
             </button>
           </div>

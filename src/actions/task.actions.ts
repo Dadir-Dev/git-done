@@ -56,6 +56,7 @@ export async function createTask(
     });
 
     revalidatePath("/dashboard");
+    revalidatePath("/projects");
     revalidatePath(`/projects/${projectId}`);
 
     return { success: true, data: task };
@@ -114,6 +115,7 @@ export async function updateTask(
     });
 
     revalidatePath("/dashboard");
+    revalidatePath("/projects");
     revalidatePath(`/projects/${task.projectId}`);
 
     return { success: true, data: task };
@@ -169,6 +171,7 @@ export async function updateTaskStatus(
     });
 
     revalidatePath("/dashboard");
+    revalidatePath("/projects");
     revalidatePath(`/projects/${task.projectId}`);
 
     return { success: true, data: task };
