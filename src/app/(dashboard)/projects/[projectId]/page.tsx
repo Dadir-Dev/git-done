@@ -1,5 +1,5 @@
 import { getProjectById } from "@/src/actions/project.actions";
-import ProjectWorkspace from "@/src/components/project-workspace";
+import ProjectWorkspace from "@/src/components/project-workspace/project-workspace";
 import { notFound } from "next/navigation";
 
 export default async function ProjectDetailPage({
