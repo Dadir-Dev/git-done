@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -8,10 +9,12 @@ export default function Home() {
           href="/"
           className="flex items-center gap-2 text-sm font-semibold"
         >
-          <span className="grid size-7 place-items-center rounded-lg bg-brand text-xs font-bold text-zinc-950">
-            G
-          </span>
-          GitDone
+          <Image
+            src="/Primary Logo.png"
+            alt="GitDone"
+            width={200}
+            height={200}
+          />
         </Link>
         <div className="flex items-center gap-2">
           <Link
