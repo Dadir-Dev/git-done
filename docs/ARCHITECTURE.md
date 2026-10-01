@@ -1,44 +1,71 @@
-# Project Tracker — Architecture Document
+# GitDone — Architecture Document
 
-**Stack:** Next.js (App Router) · TypeScript · Tailwind + Shadcn UI · PostgreSQL (Supabase/Neon) · Prisma · Clerk · Zod
-**Status:** Draft — aligned to MVP scope in PRD v1
-**Last Updated:** August 14, 2026
+**Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · Neon PostgreSQL · Prisma ORM v7 (`@prisma/adapter-pg`) · Clerk Auth · Zod v4  
+**Status:** Completed MVP (Production Architecture)  
+**Last Updated:** October 2026  
+**Live Demo:** [git-done-dadirdev.vercel.app](https://git-done-dadirdev.vercel.app/)
 
 ---
 
 ## 1. High-Level Architecture Overview
 
-The app uses a **server-first** architecture enabled by the Next.js App Router. There is no separate REST/GraphQL API layer for internal app operations — **Server Actions** act as the API boundary, called directly from Server/Client Components.
+GitDone follows a **server-first, zero-REST architecture** enabled by Next.js 16 App Router. There is no separate API layer for internal application mutations — Next.js **Server Actions** (`"use server"`) act as the secure, type-safe RPC boundary called directly from Server and Client Components.
 
-### Data Flow
+### Data Flow Diagram
 
 ```
-┌─────────────┐      invokes       ┌────────────────┐      queries       ┌─────────┐      reads/writes    ┌────────────┐
-│   Client    │ ─────────────────▶ │ Server Actions  │ ─────────────────▶ │ Prisma  │ ───────────────────▶ │ PostgreSQL │
-│ (RSC / CC)  │ ◀───────────────── │  (actions/*.ts) │ ◀───────────────── │  (ORM)  │ ◀─────────────────── │ (Supabase/ │
-└─────────────┘   revalidated data └────────────────┘   typed results    └─────────┘    rows                Neon)      │
-                                            │                                                              └────────────┘
-                                            │ validates via Zod, auth via Clerk
-                                            ▼
-                                   ┌──────────────────┐
-                                   │  Clerk (auth())   │
-                                   └──────────────────┘
+┌─────────────────────────────────┐
+│       Next.js 16 Client         │
+│  (React Server & Client Comps)  │
+└─────────────────────────────────┘
+          │                 ▲
+          │ Invokes         │ Revalidates Path
+          ▼                 │
+┌─────────────────────────────────┐
+│     Server Actions Layer        │
+│  (src/actions/*.actions.ts)     │
+├─────────────────────────────────┤
+│ 1. Clerk auth() / auth.protect()│
+│ 2. Zod Schema Validation        │
+│ 3. ensureAppUser (JIT fallback) │
+│ 4. Multi-tenant Ownership Query │
+│ 5. revalidatePath() Invalidator │
+└─────────────────────────────────┘
+          │
+          │ Queries via @prisma/adapter-pg
+          ▼
+┌─────────────────────────────────┐
+│      Prisma ORM Client v7       │
+│ (src/app/generated/prisma/...)  │
+└─────────────────────────────────┘
+          │
+          │ Pooled TCP Connection
+          ▼
+┌─────────────────────────────────┐
+│    Neon Serverless PostgreSQL   │
+│   (users, projects, tasks)      │
+└─────────────────────────────────┘
+          ▲
+          │ Webhook Event (user.created / updated / deleted)
+┌─────────────────────────────────┐
+│       Clerk Auth Service        │
+│  (/api/webhooks/clerk via Svix) │
+└─────────────────────────────────┘
 ```
 
-**Flow, step by step:**
+### Architectural Principles & Flow:
 
-1. **Client** — Server Components fetch data directly (no client-side fetch needed for initial load). Client Components (forms, buttons) call Server Actions imported directly as functions (`"use server"`).
-2. **Server Action** — Each action:
-   - Authenticates the request via Clerk's `auth()` helper (rejects if no `userId`).
-   - Validates input using the corresponding Zod schema.
-   - Enforces ownership (a user may only read/write their own `Project`/`Task` records).
-   - Calls Prisma to perform the DB operation.
-   - Calls `revalidatePath()` / `revalidateTag()` to refresh cached Server Component data.
-3. **Prisma** — Typed query layer over PostgreSQL; single shared client instance (see `lib/db.ts`).
-4. **PostgreSQL** — Hosted on Supabase or Neon; relational integrity enforced via foreign keys and cascade rules (Section 2).
-5. **Clerk** — Owns identity/session. A webhook (`api/webhooks/clerk`) syncs `user.created` / `user.updated` / `user.deleted` events into our local `User` table, so Projects/Tasks can have a normal relational foreign key instead of depending on Clerk at query time.
-
-**Why Server Actions over a REST API:** No API route boilerplate, automatic type-safety end-to-end (input → action → Prisma → UI), colocated with the feature, and no client-side data-fetching library needed for the MVP.
+1. **Server-Side Route Protection:** Unauthenticated requests to `/(dashboard)/*` are intercepted server-side via `await auth.protect()` in the layout, eliminating client-side flash and unnecessary rendering.
+2. **Server Actions RPC Boundary:**
+   - Authenticates via Clerk's `auth()` helper.
+   - Validates input using Zod schemas (`src/lib/validations/*.schema.ts`).
+   - Ensures user presence via `ensureAppUser(userId)` JIT synchronization.
+   - Enforces user isolation directly within Prisma queries (`where: { id, userId }` or `where: { id, project: { userId } }`).
+   - Revalidates cached Next.js route data via `revalidatePath()`.
+3. **Prisma v7 with Driver Adapters:** Uses `@prisma/adapter-pg` connecting to Neon PostgreSQL with connection pooling. Configuration is driven by `prisma7.config.ts` and generated into `@/src/app/generated/prisma`.
+4. **Dual-Layer Identity Synchronization:**
+   - **Layer 1 (Asynchronous Webhook):** Clerk sends signed webhooks to `/api/webhooks/clerk`, verified with Svix to keep the `User` table synced.
+   - **Layer 2 (Just-In-Time Fallback):** When a user performs their first action, `ensureAppUser(userId)` creates or updates the local `User` record from Clerk's `currentUser()` if not already synced, ensuring zero failure during initial project creation or local development.
 
 ---
 
@@ -46,12 +73,12 @@ The app uses a **server-first** architecture enabled by the Next.js App Router. 
 
 ```prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/app/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ──────────────────────────────
@@ -68,9 +95,9 @@ enum TaskStatus {
 // Models
 // ──────────────────────────────
 
-/// Mirrors the Clerk user. Synced via Clerk webhook, not created directly by app logic.
+/// Mirrors the Clerk user. Synced via Clerk webhook and JIT ensureAppUser fallback.
 model User {
-  id        String   @id // Clerk userId (e.g. "user_2abc..."), used as-is — no separate internal ID
+  id        String   @id // Clerk userId (e.g. "user_2abc..."), used directly as PK
   email     String   @unique
   name      String?
   imageUrl  String?
@@ -98,7 +125,7 @@ model Project {
   updatedAt   DateTime @updatedAt
 
   @@index([userId])
-  @@index([userId, createdAt]) // supports dashboard "most recent first" queries
+  @@index([userId, createdAt]) // supports dashboard ordering
   @@map("projects")
 }
 
@@ -115,206 +142,150 @@ model Task {
   updatedAt   DateTime   @updatedAt
 
   @@index([projectId])
-  @@index([projectId, status]) // supports "tasks by status within project" queries
+  @@index([projectId, status]) // supports status filtering within project
   @@map("tasks")
 }
 ```
 
-**Design notes:**
-
-- **Cascades:** Deleting a `User` cascades to `Project`, which cascades to `Task` — no orphaned rows possible, matches the MVP's "delete project" / account-deletion behavior.
-- **IDs:** `User.id` stores the Clerk `userId` directly (no extra join needed on every request). `Project`/`Task` use `cuid()` — collision-resistant, sortable-ish, no DB round-trip to generate like a serial int.
-- **No soft deletes in MVP** — deletions are hard deletes, consistent with "Strictly Out-of-Scope" (no audit/history features).
-- **Progress % on dashboard** is computed at query time (`COMPLETE tasks / total tasks`), not stored — avoids a denormalized field going stale.
+### Key Schema Design Decisions:
+- **Foreign Key Cascades:** Deleting a `User` cascades to `Project`, which cascades to all associated `Task` records.
+- **Direct Clerk IDs:** `User.id` stores Clerk's unique ID directly, preventing duplicate identity lookup queries.
+- **Computed Progress Metrics:** Task counts and completion ratios are calculated dynamically at query time (`COMPLETE` tasks vs. total tasks), avoiding stale denormalized columns.
 
 ---
 
 ## 3. Project Directory Structure
 
 ```
-project-tracker/
+git-done/
 ├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
+│   └── schema.prisma                    # Prisma ORM schema
+├── prisma7.config.ts                    # Prisma 7 configuration & datasource url
+├── public/
+│   ├── git-done_remove-bg_.png          # Brand logo
+│   └── screenshots/                     # Product interface screenshots
 ├── src/
+│   ├── actions/
+│   │   ├── project.actions.ts           # "use server" — Project CRUD & progress aggregations
+│   │   └── task.actions.ts              # "use server" — Task CRUD & status mutation
 │   ├── app/
 │   │   ├── (auth)/
-│   │   │   ├── sign-in/[[...sign-in]]/page.tsx
-│   │   │   └── sign-up/[[...sign-up]]/page.tsx
+│   │   │   ├── sign-in/[[...sign-in]]/  # Clerk sign-in page with dark UI appearance
+│   │   │   └── sign-up/[[...sign-up]]/  # Clerk sign-up page with dark UI appearance
 │   │   ├── (dashboard)/
-│   │   │   ├── layout.tsx                    # authenticated shell (nav, sidebar)
+│   │   │   ├── layout.tsx               # Server-side auth.protect(), desktop sidebar & mobile nav
 │   │   │   ├── dashboard/
-│   │   │   │   └── page.tsx                  # project list / dashboard
+│   │   │   │   └── page.tsx             # Workspace dashboard & high-level stats
 │   │   │   └── projects/
+│   │   │       ├── page.tsx             # All projects list view
 │   │   │       └── [projectId]/
-│   │   │           └── page.tsx               # project detail + task list
+│   │   │           └── page.tsx         # Project workspace & task board
 │   │   ├── api/
 │   │   │   └── webhooks/
 │   │   │       └── clerk/
-│   │   │           └── route.ts               # Clerk → User table sync
-│   │   ├── layout.tsx                          # root layout (ClerkProvider, fonts, globals)
-│   │   ├── page.tsx                            # marketing/landing page
-│   │   └── globals.css
+│   │   │           └── route.ts         # Svix webhook handler for Clerk user events
+│   │   ├── generated/
+│   │   │   └── prisma/                  # Prisma 7 generated client output
+│   │   ├── globals.css                  # Tailwind v4 theme variables & base styles
+│   │   ├── layout.tsx                   # Root layout (ClerkProvider, Geist fonts)
+│   │   └── page.tsx                     # Landing page with hero and interactive preview
 │   ├── components/
-│   │   ├── ui/                                 # shadcn primitives (button, dialog, input, etc.)
-│   │   ├── projects/
-│   │   │   ├── project-card.tsx
-│   │   │   ├── project-form.tsx                # create/edit dialog
-│   │   │   └── project-list.tsx
-│   │   └── tasks/
-│   │       ├── task-item.tsx
-│   │       ├── task-form.tsx
-│   │       └── task-status-select.tsx
-│   ├── actions/
-│   │   ├── project.actions.ts                  # "use server" — Project CRUD
-│   │   └── task.actions.ts                     # "use server" — Task CRUD
+│   │   ├── dashboard/
+│   │   │   ├── dashboard-overview.tsx   # Dashboard header & container
+│   │   │   ├── dashboard-stats.tsx      # Stat cards (Projects, Tasks ratio, Progress %)
+│   │   │   └── recent-projects-section.tsx # Recent projects list on dashboard
+│   │   ├── navigation/
+│   │   │   ├── active-nav-link.tsx      # Segment/exact route active state styling
+│   │   │   ├── desktop-sidebar.tsx      # Fixed 250px desktop navigation bar
+│   │   │   ├── mobile-menu-toggle.tsx   # Mobile hamburger toggle
+│   │   │   ├── mobile-navigation.tsx    # Mobile slide-out sheet drawer
+│   │   │   ├── navigation-config.ts     # Navigation links definition
+│   │   │   ├── navigation-links.tsx     # Nav link renderer
+│   │   │   ├── sidebar-account.tsx      # Clerk UserButton wrapper & user display name
+│   │   │   ├── sidebar-brand.tsx        # Logo & branding mark
+│   │   │   └── sidebar-content.tsx      # Shared navigation content
+│   │   ├── project-workspace/
+│   │   │   ├── project-dialogs.tsx      # Add task, edit project, delete project dialogs
+│   │   │   ├── project-header.tsx       # Workspace header with action buttons
+│   │   │   ├── project-workspace.tsx    # Client orchestrator with useTransition
+│   │   │   ├── task-board.tsx           # Grouped status sections & filter tabs
+│   │   │   └── types.ts                 # Workspace specific TypeScript types
+│   │   └── projects/
+│   │       ├── project-dialog.tsx       # Modal form for creating a new project
+│   │       ├── projects-list-header.tsx # Projects page header & "New project" button
+│   │       ├── projects-list-workspace.tsx # Projects state container
+│   │       └── projects-list.tsx        # Project list items with progress bars
 │   ├── lib/
-│   │   ├── prisma.ts                                # Prisma client singleton
-│   │   ├── utils.ts                             # cn(), formatting helpers
+│   │   ├── ensure-app-user.ts           # JIT user synchronization fallback
+│   │   ├── prisma.ts                    # PrismaPg client singleton
 │   │   └── validations/
-│   │       ├── project.schema.ts                # Zod schemas
-│   │       └── task.schema.ts
+│   │       ├── project.schema.ts        # Zod schemas for projects
+│   │       └── task.schema.ts           # Zod schemas for tasks
+│   ├── proxy.ts                         # Clerk middleware configuration
 │   └── types/
-│       └── index.ts                             # shared TS types (ActionResult<T>, etc.)
-├── proxy.ts                                 # Clerk route protection
-├── .env
-├── next.config.mjs
-├── tailwind.config.ts
-├── components.json                               # shadcn config
-├── tsconfig.json
-└── package.json
+│       └── index.ts                     # Shared types (ActionResult<T>, ProjectSummary)
+├── package.json
+└── tsconfig.json
 ```
 
 ---
 
-## 4. Core Server Actions Specification
+## 4. Server Actions Specification
 
-All actions live under `"use server"` files, authenticate via Clerk's `auth()`, validate input with Zod, and return a consistent result shape:
+All actions live under `"use server"`, enforce authentication, validate payloads via Zod, and return a standardized result shape:
 
 ```typescript
-// types/index.ts
 export type ActionResult<T> =
-	| { success: true; data: T }
-	| { success: false; error: string };
+  | { success: true; data: T }
+  | { success: false; error: string };
 ```
 
 ### `actions/project.actions.ts`
 
-```typescript
-"use server";
-
-/** Creates a new project owned by the current user. */
-async function createProject(
-	input: CreateProjectInput,
-): Promise<ActionResult<Project>>;
-
-/** Returns all projects owned by the current user, with task counts for dashboard progress display. */
-async function getProjects(): Promise<
-	ActionResult<(Project & { taskCount: number; completedCount: number })[]>
->;
-
-/** Returns a single project (with its tasks) if owned by the current user. */
-async function getProjectById(
-	projectId: string,
-): Promise<ActionResult<Project & { tasks: Task[] }>>;
-
-/** Updates a project's name/description. Ownership is verified before the write. */
-async function updateProject(
-	projectId: string,
-	input: UpdateProjectInput,
-): Promise<ActionResult<Project>>;
-
-/** Deletes a project (and its tasks, via cascade). Ownership is verified before the write. */
-async function deleteProject(projectId: string): Promise<ActionResult<void>>;
-```
+- `createProject(input: CreateProjectInput): Promise<ActionResult<Project>>`
+  - Validates name and description.
+  - Ensures user exists via `ensureAppUser`.
+  - Creates project and revalidates `/dashboard` and `/projects`.
+- `getProjects(): Promise<ActionResult<ProjectSummary[]>>`
+  - Returns user's projects with calculated `taskCount` and `completedCount`.
+- `getProjectById(projectId: string): Promise<ActionResult<Project & { tasks: Task[] }>>`
+  - Returns a project with all its tasks, scoped to the authenticated user.
+- `updateProject(projectId: string, input: UpdateProjectInput): Promise<ActionResult<Project>>`
+  - Updates project details and revalidates `/dashboard`, `/projects`, and `/projects/[projectId]`.
+- `deleteProject(projectId: string): Promise<ActionResult<void>>`
+  - Deletes project (cascading to tasks) and revalidates dashboard and projects paths.
 
 ### `actions/task.actions.ts`
 
-```typescript
-"use server";
-
-/** Creates a task within a project. Verifies the parent project belongs to the current user. */
-async function createTask(
-	projectId: string,
-	input: CreateTaskInput,
-): Promise<ActionResult<Task>>;
-
-/** Returns all tasks for a project, optionally filtered by status. */
-async function getTasksByProject(
-	projectId: string,
-	status?: TaskStatus,
-): Promise<ActionResult<Task[]>>;
-
-/** Updates a task's title/description/status. Ownership verified via the parent project's userId. */
-async function updateTask(
-	taskId: string,
-	input: UpdateTaskInput,
-): Promise<ActionResult<Task>>;
-
-/** Convenience action for the common case: just flipping status (e.g. checkbox toggle in UI). */
-async function updateTaskStatus(
-	taskId: string,
-	status: TaskStatus,
-): Promise<ActionResult<Task>>;
-
-/** Deletes a task. Ownership verified via the parent project's userId. */
-async function deleteTask(taskId: string): Promise<ActionResult<void>>;
-```
-
-**Ownership check pattern (applies to every action above):** since `Task` has no direct `userId`, ownership is verified by joining through `project.userId === auth().userId` in the `where` clause of the Prisma query itself (not as a separate check) — this ensures a user can never even probe for the existence of another user's data via ID guessing.
+- `createTask(projectId: string, input: CreateTaskInput): Promise<ActionResult<Task>>`
+  - Confirms parent project ownership before insertion.
+  - Creates task and revalidates `/dashboard`, `/projects`, and `/projects/[projectId]`.
+- `getTasksByProjectId(projectId: string, status?: TaskStatus): Promise<ActionResult<Task[]>>`
+  - Fetches tasks for a project filtered by ownership and optional status.
+- `updateTask(taskId: string, input: UpdateTaskInput): Promise<ActionResult<Task>>`
+  - Updates task title, description, or status through project ownership verification.
+- `updateTaskStatus(taskId: string, status: TaskStatus): Promise<ActionResult<Task>>`
+  - Fast status toggle (TODO / IN_PROGRESS / COMPLETE).
+- `deleteTask(taskId: string): Promise<ActionResult<void>>`
+  - Deletes task and revalidates project workspace.
 
 ---
 
 ## 5. Validation Schemas (Zod)
 
 ### `lib/validations/project.schema.ts`
-
-```typescript
-import { z } from "zod";
-
-export const createProjectSchema = z.object({
-	name: z.string().trim().min(1, "Project name is required").max(100),
-	description: z.string().trim().max(500).optional(),
-});
-
-export const updateProjectSchema = createProjectSchema.partial();
-
-export type CreateProjectInput = z.infer<typeof createProjectSchema>;
-export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
-```
+- **Name:** Required string, 1–100 characters, trimmed.
+- **Description:** Optional string, up to 500 characters, trimmed.
 
 ### `lib/validations/task.schema.ts`
-
-```typescript
-import { z } from "zod";
-
-export const taskStatusEnum = z.enum(["TODO", "IN_PROGRESS", "COMPLETE"]);
-
-export const createTaskSchema = z.object({
-	title: z.string().trim().min(1, "Task title is required").max(200),
-	description: z.string().trim().max(1000).optional(),
-	status: taskStatusEnum.default("TODO"),
-});
-
-export const updateTaskSchema = createTaskSchema.partial();
-
-export type CreateTaskInput = z.infer<typeof createTaskSchema>;
-export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
-export type TaskStatus = z.infer<typeof taskStatusEnum>;
-```
-
-**Validation flow:** Server Actions call `.parse()` (or `.safeParse()`) on incoming input before touching Prisma. On failure, the action returns `{ success: false, error: <message> }` rather than throwing, so Client Components can render inline form errors without a try/catch wrapper.
+- **Title:** Required string, 1–200 characters, trimmed.
+- **Description:** Optional string, up to 1000 characters, trimmed.
+- **Status:** Enum: `TODO`, `IN_PROGRESS`, `COMPLETE` (defaults to `TODO`).
 
 ---
 
-## 6. Explicitly Deferred (Architecture-Level)
+## 6. Security, Isolation & Multi-Tenancy
 
-Consistent with the PRD's out-of-scope list, this architecture **intentionally excludes**:
-
-- Any REST/GraphQL API layer (Server Actions only)
-- Role/permission tables (single-owner model — `Project.userId` is the only access control needed)
-- Soft-delete columns, audit logs, or history tables
-- Real-time sync (websockets/polling) — data refreshes via Next.js cache revalidation on mutation only
-- File storage buckets (no attachments in MVP)
-
-These can be layered in later without a schema rewrite — e.g., adding a `ProjectMember` join table for collaboration is additive, not a breaking change to the models above.
+- **Hard Multi-Tenancy:** Projects and Tasks are strictly filtered by Clerk `userId` on every read and write. No cross-tenant data leaks are possible.
+- **CSRF & Injection Protection:** Next.js Server Actions enforce POST-only execution with native origin checks. Parameterized queries via Prisma prevent SQL injection.
+- **Webhook Integrity:** Clerk webhooks verify incoming cryptographic signatures using `@clerk/nextjs/webhooks` and `CLERK_WEBHOOK_SIGNING_SECRET`.
