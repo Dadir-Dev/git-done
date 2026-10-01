@@ -2,74 +2,104 @@
 
 ## Direction
 
-GitDone is a calm, dark workspace for moving meaningful work to done. It takes cues from Linear's density, clarity, and restrained emerald emphasis, with a warmer Notion-like sense of a personal workspace. The interface is deliberate rather than decorative: content leads, controls recede, and borders provide structure.
+GitDone is a calm, dark workspace for moving meaningful work to done. It takes cues from Linear's density, clarity, and restrained emerald emphasis, with a warmer Notion-like sense of a personal workspace. The interface is deliberate rather than decorative: content leads, controls recede, and subtle borders provide structure.
 
-Do not imitate Linear layouts or introduce visual controls for unsupported product concepts. The MVP surfaces only projects and tasks.
+The design philosophy avoids visual noise and excessive animation, keeping the developer or creator immersed in their workflow without distraction.
+
+---
 
 ## Foundations
 
-### Color
+### Color Tokens
 
-| Token | Value | Use |
-| --- | --- | --- |
-| Canvas | `#121214` | Application and page background |
-| Sidebar | `#0D0D0F` | Persistent navigation |
-| Surface | `#19191C` | Dialogs, menus, raised sections |
-| Surface raised | `#222226` | Hovered rows and selected controls |
-| Border | `rgba(255,255,255,.10)` | Default separators and outlines |
-| Border subtle | `rgba(255,255,255,.07)` | Low-emphasis separators |
-| Text primary | `#F4F4F5` | Headings and primary labels |
-| Text secondary | `#A1A1AA` | Supporting copy |
-| Text muted | `#71717A` | Metadata and placeholders |
-| Brand | `#34D399` | Primary actions and selected state |
-| Brand hover | `#6EE7B7` | Primary-action hover |
-| Brand text | `#A7F3D0` | Brand text on dark surfaces |
-| Danger | `#F87171` | Destructive actions |
-| Success | `#34D399` | Completed tasks only |
-| Active | `#60A5FA` | In-progress tasks only |
+| Token | CSS Variable / Hex | Tailwind Utility | Use |
+| --- | --- | --- | --- |
+| Canvas | `#121214` | `bg-[#121214]` / `bg-background` | Application background & page canvas |
+| Sidebar | `#0D0D0F` / `#161618` | `bg-[#161618]` | Persistent navigation sidebar & modal sheets |
+| Surface | `#19191C` | `bg-[#19191C]` | Dialogs, elevated panels, dropdowns |
+| Surface Raised | `#222226` / `#202024` | `bg-[#202024]` | Form inputs, selects, elevated rows |
+| Border | `rgba(255, 255, 255, 0.10)` | `border-white/10` | Default card borders, separators |
+| Border Subtle | `rgba(255, 255, 255, 0.07)` | `border-white/[0.07]` | Row dividers and subtle outlines |
+| Text Primary | `#F4F4F5` | `text-zinc-100` / `text-foreground` | Headings, titles, primary labels |
+| Text Secondary | `#A1A1AA` | `text-zinc-400` | Subheadings, descriptions, helper text |
+| Text Muted | `#71717A` | `text-zinc-500` / `text-zinc-600` | Metadata, counts, placeholders |
+| Brand | `#34D399` | `bg-brand` / `text-brand` | Primary CTA buttons, progress bars, active highlights |
+| Brand Hover | `#6EE7B7` | `hover:bg-brand-hover` | Interactive hover state on brand actions |
+| Brand Soft | `rgb(52 211 153 / 0.10)` | `bg-brand-soft` / `bg-brand-text/6` | Badges, pills, subtle highlights |
+| Brand Text | `#A7F3D0` | `text-brand-text` | Brand labels, links, and high-contrast badges |
+| Status: To Do | `#71717A` / `bg-zinc-500` | `text-zinc-400` | Pending/To Do task indicators |
+| Status: In Progress | `#60A5FA` / `bg-blue-400` | `text-blue-300` | Active/In Progress task badges |
+| Status: Complete | `#34D399` / `bg-emerald-400` | `text-emerald-400` | Completed task checkboxes & checkmarks |
+| Danger | `#F87171` / `text-red-400` | `text-red-400`, `bg-red-400` | Destructive actions and delete confirmations |
 
-Semantic color must always be paired with an icon or text label. Accent is reserved for a clear action or current selection, never large decorative areas.
+> [!NOTE]
+> Semantic color must always be paired with an icon or clear text label. Accent colors are reserved for actionable targets and current selections, never large decorative backgrounds.
+
+---
 
 ### Typography
 
-Use Geist Sans via `next/font` as the interface typeface. Default UI text is `text-sm` / 14px with a 20px line height; metadata is `text-xs` / 12px. Page titles are 24–30px, compact with tight tracking. Use medium (500) for labels, semibold (600) for hierarchy, and normal weight for descriptions. Brand colors are defined once as CSS variables in `src/app/globals.css` and exposed as `bg-brand`, `bg-brand-hover`, `text-brand-text`, and related Tailwind utilities.
+- **Primary Typeface:** `Geist Sans` loaded via Next.js Google Fonts (`next/font/google`).
+- **Monospace Typeface:** `Geist Mono` for code and identifier tokens.
+- **Scale & Hierarchy:**
+  - Page Titles: `text-3xl` (30px) / `tracking-tight` / font-semibold (`#F4F4F5`).
+  - Section / Card Headers: `text-sm` (14px) / font-medium (`#E4E4E7`).
+  - Body Text: `text-sm` (14px) / `leading-6` (`#A1A1AA`).
+  - Metadata / Badges / Labels: `text-xs` (12px) / `tracking-[0.14em]` uppercase (`#A7F3D0` or `#71717A`).
 
-### Space, shape, and elevation
+---
 
-Use a 4px base grid: 4, 8, 12, 16, 20, 24, 32, and 40px. Default controls are 36px high; primary controls may be 40px. Use 6px radius for compact controls, 8px for inputs and rows, and 12px for dialogs. Separation comes from 1px borders (`border-white/10`); shadows are limited to dialogs and mobile navigation overlays.
+### Space, Radius, and Elevation
 
-## Layout and responsiveness
+- **Grid Base:** 4px spacing unit (`p-1` = 4px, `p-2` = 8px, `p-3` = 12px, `p-4` = 16px, `p-6` = 24px, `p-8` = 32px).
+- **Corner Radii:**
+  - Compact Badges & Filters: `rounded` (4px) / `rounded-md` (6px)
+  - Inputs & Action Buttons: `rounded-lg` (8px)
+  - Cards, Containers & Dialogs: `rounded-xl` (12px)
+- **Borders over Shadows:** Depth is established using `1px` translucent borders (`border-white/10` and `border-white/[0.07]`). Elevated shadows are reserved for modal dialogs (`shadow-2xl shadow-black/40`).
 
-Desktop uses a persistent 248px sidebar and a flexible content region. The content header remains compact and uses a subtle bottom border. Page content has 24px padding at desktop, 16px at tablet, and 12–16px on mobile.
+---
 
-At widths under 1024px the sidebar is hidden behind a menu button and opens as a modal sheet. Tables transform into stacked project rows; secondary metadata is hidden before primary project and progress information. Dialogs use a 480px maximum width on desktop and sit within 16px viewport gutters on mobile.
+## Layout & Responsive Structure
 
-## Navigation
+- **Desktop (>= 1024px):**
+  - Persistent fixed sidebar (`w-62.5` / 250px) with brand logo, workspace badge, navigation links, and Clerk user button.
+  - Main content offset via `lg:pl-62.5` with a responsive max-width container (`max-w-6xl` or `max-w-4xl`).
+- **Mobile & Tablet (< 1024px):**
+  - Compact sticky top bar with hamburger menu toggle.
+  - Slide-out mobile sheet drawer (`MobileNavigation`) with backdrop blur and smooth sliding transition.
+  - Action buttons and filter tabs adapt horizontally with touch-friendly tap targets (>= 36px).
 
-The sidebar contains the GitDone mark, a compact workspace label, Dashboard and Projects navigation, and the Clerk user menu. A selected item uses a slightly raised neutral surface and a 2px emerald leading indicator. Navigation should never use broad cards or gradients.
+---
 
-## Screen patterns
+## Screen & Component Patterns
 
-### Dashboard and projects
+### 1. Marketing & Landing (`/`)
+- Dark canvas with subtle centered radial brand glow (`bg-brand/10 blur-[100px]`).
+- Value proposition badge, bold headline, dual CTAs ("Start tracking for free" / "Open your workspace").
+- Live-styled preview card demonstrating real project and task states.
 
-Use a list-first workspace view. The header shows a title, concise explanatory copy, count, and a `New project` action. Each project row shows its name, optional description, task-progress fraction, progress bar, and a directional affordance. Empty states use one short explanation and a single clear next action.
+### 2. Dashboard (`/dashboard`)
+- **Metric Stat Cards:** Quick summary grid displaying Total Projects, Tasks Ratio (`completed/total`), and Overall Progress Percentage.
+- **Recent Projects:** Compact list showing recent projects, task counts, and percentage progress bars.
 
-### Project workspace and tasks
+### 3. Projects List (`/projects`)
+- Header with project count badge and primary `+ New project` modal trigger.
+- Clean stacked list view: project title, description, task completion fraction, visual progress bar, and navigation chevron.
+- Thoughtful empty state with direct action when zero projects exist.
 
-The project header contains a back link, editable title/description through a contained dialog, task count, and overflow-style actions. Tasks are shown under compact status sections: To do, In progress, and Complete. A client-side filter lets users focus without changing their stored data. Each task has a status selector; completion uses a check icon and subdued title treatment.
+### 4. Project Workspace & Task Board (`/projects/[id]`)
+- **Header:** Back navigation link, project title, description, and quick-action buttons (`+ Add task`, `Edit`, `Delete`).
+- **Filter Tabs:** Segmented pill controls to filter view by `All`, `To do`, `In progress`, and `Complete`.
+- **Status Sections:** Automatic grouping of tasks with status indicator dots, strike-through styling on completion, inline status dropdown selector, and delete trigger.
+- **Project Dialogs:** Contained modal overlays for adding tasks, editing project metadata, and confirming project deletion.
 
-### Forms, dialogs, and menus
+---
 
-Forms use visible labels, calm placeholders, 8px fields, and inline validation feedback. Dialogs dim the canvas, have a clear title and description, trap neither unsupported focus behavior nor functionality, and support Escape/outside dismissal when safe. Destructive confirmation is visually distinct and uses explicit copy.
+## Interactions & Accessibility
 
-## States and interaction
+- **Keyboard Focus:** Global focus indicator via `:focus-visible` with `2px solid var(--brand-focus)` and `2px` offset.
+- **Pending Mutations:** Asynchronous Server Actions use React 19 `useTransition` to provide immediate pending states (`disabled:opacity-50`) without layout jumps.
+- **Reduced Motion:** Fully honors `prefers-reduced-motion: reduce` by zeroing transition durations and animations globally.
+- **Screen Reader Support:** Explicit `aria-label`, `aria-modal`, `role="dialog"`, `role="alert"`, and semantic HTML landmarks.
 
-Every interactive control has 150ms ease-out color/background transitions, visible keyboard focus (`2px` brand ring), and disabled opacity with no pointer interaction. Rows gain a subtle raised surface on hover. Use small progress indicators and disabled submit controls during pending mutations. Empty, error, and loading states must keep their layout stable and offer a direct recovery action where possible. Honor `prefers-reduced-motion` by removing non-essential motion.
-
-## Accessibility
-
-Maintain AA-leaning text contrast; never identify task status by color alone. Use semantic buttons, labels linked to inputs, descriptive dialog headings, keyboard-reachable navigation, and `aria-expanded` for collapsible navigation. Icon-only buttons require an `aria-label`. Keep target sizes at least 36px for standard controls and 40px for touch-critical actions.
-
-## Tailwind and Shadcn conventions
-
-Use Tailwind v4 utilities against the token variables defined in `globals.css`; avoid one-off hex values in components. Reusable primitives live in `src/components/ui` and use `cn()` when variants need composition. Follow Shadcn's compositional model (button, input, dialog, select primitives) and Radix-quality accessibility when those primitives are introduced. Keep pages server-rendered; place only stateful controls and server-action callers in narrow client components.
