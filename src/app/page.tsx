@@ -5,12 +5,9 @@ export default function Home() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#121214] text-zinc-100">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-sm font-semibold"
-        >
+        <Link href="/" className="flex items-center">
           <Image
-            src="/Primary Logo.png"
+            src="/git-done_remove-bg_.png"
             alt="GitDone"
             width={200}
             height={200}
