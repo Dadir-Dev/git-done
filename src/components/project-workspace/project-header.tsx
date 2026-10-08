@@ -24,6 +24,7 @@ export default function ProjectHeader({
           ‹ Projects
         </Link>
         <div className="flex gap-2">
+          {/* edit project button */}
           <button
             type="button"
             onClick={onEdit}
@@ -31,6 +32,8 @@ export default function ProjectHeader({
           >
             Edit project
           </button>
+
+          {/* add task button */}
           <button
             type="button"
             onClick={onAddTask}
@@ -53,6 +56,8 @@ export default function ProjectHeader({
               {description || "No description yet."}
             </p>
           </div>
+
+          {/* delete project button */}
           <button
             type="button"
             onClick={onDelete}

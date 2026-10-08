@@ -52,6 +52,7 @@ export default function ProjectDialogs({
   onUpdateProject: (input: UpdateProjectInput) => void;
   onDeleteProject: () => void;
 }) {
+  // open task dialog if dialog is "task"
   if (dialog === "task") {
     return (
       <DialogShell onClose={onClose}>
@@ -116,6 +117,7 @@ export default function ProjectDialogs({
     );
   }
 
+  // open edit project dialog if dialog is "edit"
   if (dialog === "edit") {
     return (
       <DialogShell onClose={onClose}>
@@ -177,6 +179,7 @@ export default function ProjectDialogs({
     );
   }
 
+  // open delete project dialog if dialog is "delete"
   if (dialog === "delete") {
     return (
       <DialogShell onClose={onClose}>
@@ -214,5 +217,6 @@ export default function ProjectDialogs({
     );
   }
 
+  // if no dialog is open, return null
   return null;
 }

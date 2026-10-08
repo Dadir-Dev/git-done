@@ -23,21 +23,33 @@ export default function ProjectWorkspace({
 }) {
   const router = useRouter();
   const [dialog, setDialog] = useState<"task" | "edit" | "delete" | null>(null);
+
+  // useTransition to show pending state for async actions
   const [pending, startTransition] = useTransition();
+
   const [error, setError] = useState("");
 
+  // helper functions - reusable pipeline for running async actions
   function run(
     work: () => Promise<{ success: boolean; error?: string }>,
     close = true,
   ) {
+    // reset error state before running the action
     setError("");
+
+    // run the action in a transition to show pending state
     startTransition(async () => {
       const result = await work();
+      // if it fails, extract the error and do not close the dialog
       if (!result.success) {
         setError(result.error ?? "Something went wrong.");
         return;
       }
+
+      // if it succeeds, close the dialog
       if (close) setDialog(null);
+
+      // refresh the page to get the latest data
       router.refresh();
     });
   }
@@ -69,11 +81,12 @@ export default function ProjectWorkspace({
         onClose={() => setDialog(null)}
         onCreateTask={(input) => run(() => createTask(project.id, input))}
         onUpdateProject={(input) => run(() => updateProject(project.id, input))}
+        // if we delete the project, redirect to the projects page instead of refreshing the current page
         onDeleteProject={() =>
           run(async () => {
-            const result = await deleteProject(project.id);
-            if (result.success) router.push("/projects");
-            return result;
+            const result = await deleteProject(project.id); // 1. Run the database mutation
+            if (result.success) router.push("/projects"); // 2. If it worked, escape to the index page!
+            return result; // 3. Return the exact object structure `run` demands
           })
         }
       />

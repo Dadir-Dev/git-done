@@ -9,6 +9,8 @@ export default async function ProjectDetailPage({
 }) {
   const { projectId } = await params;
   const result = await getProjectById(projectId);
+
+  // TODO: error handling - conform if return statement is needed here(ask copilot)
   if (!result.success) notFound();
 
   return <ProjectWorkspace project={result.data} />;
