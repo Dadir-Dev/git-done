@@ -1,6 +1,7 @@
 "use client";
 
 import { createProject } from "@/src/actions/project.actions";
+import Button from "@/src/components/ui/button";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState, useTransition } from "react";
 
@@ -66,14 +67,14 @@ export default function ProjectDialog({
               Give the work a clear, memorable name.
             </p>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="quiet"
+            size="icon-sm"
             aria-label="Close dialog"
             onClick={onClose}
-            className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-white/[0.07] hover:text-zinc-200"
           >
             ×
-          </button>
+          </Button>
         </div>
         <form onSubmit={submit} className="mt-6 space-y-4">
           <label className="block text-sm font-medium text-zinc-300">
@@ -104,19 +105,15 @@ export default function ProjectDialog({
             </p>
           )}
           <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
+            <Button
+              variant="quiet"
               onClick={onClose}
-              className="h-9 rounded-md px-3 text-sm font-medium text-zinc-300 hover:bg-white/[0.07]"
             >
               Cancel
-            </button>
-            <button
-              disabled={pending}
-              className="h-9 rounded-md bg-brand px-4 text-sm font-semibold text-zinc-950 transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            </Button>
+            <Button type="submit" loading={pending}>
               {pending ? "Creating…" : "Create project"}
-            </button>
+            </Button>
           </div>
         </form>
       </section>

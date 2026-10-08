@@ -1,5 +1,6 @@
 import type { ProjectSummary } from "@/src/types";
 import Link from "next/link";
+import Button from "@/src/components/ui/button";
 
 export default function ProjectsList({
   projects,
@@ -14,15 +15,13 @@ export default function ProjectsList({
         <h2 className="text-sm font-medium text-zinc-200">All projects</h2>
         <span className="text-xs text-zinc-500">Progress</span>
       </div>
-      {projects.length ? (
+      {projects.length ?
         <ul>
           {projects.map((project) => {
             const percent =
-              project.taskCount
-                ? Math.round(
-                    (project.completedCount / project.taskCount) * 100,
-                  )
-                : 0;
+              project.taskCount ?
+                Math.round((project.completedCount / project.taskCount) * 100)
+              : 0;
 
             return (
               <li
@@ -66,27 +65,25 @@ export default function ProjectsList({
             );
           })}
         </ul>
-      ) : (
-        <div className="flex min-h-72 flex-col items-center justify-center px-6 text-center">
-          <span className="grid size-10 place-items-center rounded-lg border border-white/10 bg-white/3 text-xl text-brand-text">
+      : <div className="flex min-h-72 flex-col items-center justify-center px-6 text-center">
+          <Button
+            variant="quiet-accent"
+            size="icon-lg"
+            aria-label="Create your first project"
+            onClick={onCreateProject}
+            className="rounded-lg border border-white/10 bg-white/3 text-xl hover:bg-white/8"
+          >
             +
-          </span>
+          </Button>
           <h3 className="mt-4 text-sm font-medium text-zinc-200">
-            Nothing in motion yet
+            Create your first project
           </h3>
           <p className="mt-1 max-w-sm text-sm leading-6 text-zinc-500">
             Create a project to turn an idea into a focused list of next
             actions.
           </p>
-          <button
-            type="button"
-            onClick={onCreateProject}
-            className="mt-5 text-sm font-medium text-brand-text hover:text-brand-hover"
-          >
-            Create your first project
-          </button>
         </div>
-      )}
+      }
     </section>
   );
 }
