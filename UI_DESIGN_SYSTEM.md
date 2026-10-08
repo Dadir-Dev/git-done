@@ -12,25 +12,25 @@ The design philosophy avoids visual noise and excessive animation, keeping the d
 
 ### Color Tokens
 
-| Token | CSS Variable / Hex | Tailwind Utility | Use |
-| --- | --- | --- | --- |
-| Canvas | `#121214` | `bg-[#121214]` / `bg-background` | Application background & page canvas |
-| Sidebar | `#0D0D0F` / `#161618` | `bg-[#161618]` | Persistent navigation sidebar & modal sheets |
-| Surface | `#19191C` | `bg-[#19191C]` | Dialogs, elevated panels, dropdowns |
-| Surface Raised | `#222226` / `#202024` | `bg-[#202024]` | Form inputs, selects, elevated rows |
-| Border | `rgba(255, 255, 255, 0.10)` | `border-white/10` | Default card borders, separators |
-| Border Subtle | `rgba(255, 255, 255, 0.07)` | `border-white/[0.07]` | Row dividers and subtle outlines |
-| Text Primary | `#F4F4F5` | `text-zinc-100` / `text-foreground` | Headings, titles, primary labels |
-| Text Secondary | `#A1A1AA` | `text-zinc-400` | Subheadings, descriptions, helper text |
-| Text Muted | `#71717A` | `text-zinc-500` / `text-zinc-600` | Metadata, counts, placeholders |
-| Brand | `#34D399` | `bg-brand` / `text-brand` | Primary CTA buttons, progress bars, active highlights |
-| Brand Hover | `#6EE7B7` | `hover:bg-brand-hover` | Interactive hover state on brand actions |
-| Brand Soft | `rgb(52 211 153 / 0.10)` | `bg-brand-soft` / `bg-brand-text/6` | Badges, pills, subtle highlights |
-| Brand Text | `#A7F3D0` | `text-brand-text` | Brand labels, links, and high-contrast badges |
-| Status: To Do | `#71717A` / `bg-zinc-500` | `text-zinc-400` | Pending/To Do task indicators |
-| Status: In Progress | `#60A5FA` / `bg-blue-400` | `text-blue-300` | Active/In Progress task badges |
-| Status: Complete | `#34D399` / `bg-emerald-400` | `text-emerald-400` | Completed task checkboxes & checkmarks |
-| Danger | `#F87171` / `text-red-400` | `text-red-400`, `bg-red-400` | Destructive actions and delete confirmations |
+| Token               | CSS Variable / Hex           | Tailwind Utility                    | Use                                                   |
+| ------------------- | ---------------------------- | ----------------------------------- | ----------------------------------------------------- |
+| Canvas              | `#121214`                    | `bg-[#121214]` / `bg-background`    | Application background & page canvas                  |
+| Sidebar             | `#0D0D0F` / `#161618`        | `bg-[#161618]`                      | Persistent navigation sidebar & modal sheets          |
+| Surface             | `#19191C`                    | `bg-[#19191C]`                      | Dialogs, elevated panels, dropdowns                   |
+| Surface Raised      | `#222226` / `#202024`        | `bg-[#202024]`                      | Form inputs, selects, elevated rows                   |
+| Border              | `rgba(255, 255, 255, 0.10)`  | `border-white/10`                   | Default card borders, separators                      |
+| Border Subtle       | `rgba(255, 255, 255, 0.07)`  | `border-white/[0.07]`               | Row dividers and subtle outlines                      |
+| Text Primary        | `#F4F4F5`                    | `text-zinc-100` / `text-foreground` | Headings, titles, primary labels                      |
+| Text Secondary      | `#A1A1AA`                    | `text-zinc-400`                     | Subheadings, descriptions, helper text                |
+| Text Muted          | `#71717A`                    | `text-zinc-500` / `text-zinc-600`   | Metadata, counts, placeholders                        |
+| Brand               | `#34D399`                    | `bg-brand` / `text-brand`           | Primary CTA buttons, progress bars, active highlights |
+| Brand Hover         | `#6EE7B7`                    | `hover:bg-brand-hover`              | Interactive hover state on brand actions              |
+| Brand Soft          | `rgb(52 211 153 / 0.10)`     | `bg-brand-soft` / `bg-brand-text/6` | Badges, pills, subtle highlights                      |
+| Brand Text          | `#A7F3D0`                    | `text-brand-text`                   | Brand labels, links, and high-contrast badges         |
+| Status: To Do       | `#71717A` / `bg-zinc-500`    | `text-zinc-400`                     | Pending/To Do task indicators                         |
+| Status: In Progress | `#60A5FA` / `bg-blue-400`    | `text-blue-300`                     | Active/In Progress task badges                        |
+| Status: Complete    | `#34D399` / `bg-emerald-400` | `text-emerald-400`                  | Completed task checkboxes & checkmarks                |
+| Danger              | `#F87171` / `text-red-400`   | `text-red-400`, `bg-red-400`        | Destructive actions and delete confirmations          |
 
 > [!NOTE]
 > Semantic color must always be paired with an icon or clear text label. Accent colors are reserved for actionable targets and current selections, never large decorative backgrounds.
@@ -54,7 +54,8 @@ The design philosophy avoids visual noise and excessive animation, keeping the d
 - **Grid Base:** 4px spacing unit (`p-1` = 4px, `p-2` = 8px, `p-3` = 12px, `p-4` = 16px, `p-6` = 24px, `p-8` = 32px).
 - **Corner Radii:**
   - Compact Badges & Filters: `rounded` (4px) / `rounded-md` (6px)
-  - Inputs & Action Buttons: `rounded-lg` (8px)
+  - Inputs: `rounded-lg` (8px)
+  - Action Buttons: `rounded-md` (6px)
   - Cards, Containers & Dialogs: `rounded-xl` (12px)
 - **Borders over Shadows:** Depth is established using `1px` translucent borders (`border-white/10` and `border-white/[0.07]`). Elevated shadows are reserved for modal dialogs (`shadow-2xl shadow-black/40`).
 
@@ -98,6 +99,8 @@ The design philosophy avoids visual noise and excessive animation, keeping the d
 
 ## Interactions & Accessibility
 
+- **Buttons:** Use native `<button>` elements for actions and `Link` for navigation. Shared button variants cover primary, secondary, destructive, and quiet actions; keep segmented filters and full-row navigation links specialized.
+- **Disabled & Pending Actions:** Disabled buttons use a not-allowed cursor and reduced opacity. Pending actions disable the button, expose `aria-busy`, and keep a descriptive pending label.
 - **Keyboard Focus:** Global focus indicator via `:focus-visible` with `2px solid var(--brand-focus)` and `2px` offset.
 - **Pending Mutations:** Asynchronous Server Actions use React 19 `useTransition` to provide immediate pending states (`disabled:opacity-50`) without layout jumps.
 - **Reduced Motion:** Fully honors `prefers-reduced-motion: reduce` by zeroing transition durations and animations globally.

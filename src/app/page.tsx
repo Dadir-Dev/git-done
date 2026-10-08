@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { buttonStyles } from "@/src/components/ui/button";
 
 export default function Home() {
   return (
@@ -16,13 +17,13 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <Link
             href="/sign-in"
-            className="inline-flex items-center justify-center h-9 rounded-md px-3 text-sm font-medium text-zinc-300 border border-white/10 bg-white/10 hover:bg-white/30"
+            className={buttonStyles({ variant: "secondary-prominent" })}
           >
             Sign in
           </Link>
           <Link
             href="/sign-up"
-            className="inline-flex h-9 items-center rounded-md bg-brand px-3.5 text-sm font-semibold text-zinc-950 transition hover:bg-brand-hover"
+            className={buttonStyles({ variant: "primary" })}
           >
             Get started
           </Link>
@@ -46,13 +47,13 @@ export default function Home() {
         <div className="relative mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href="/sign-up"
-            className="inline-flex h-10 items-center rounded-md bg-brand px-4 text-sm font-semibold text-zinc-950 transition hover:bg-brand-hover"
+            className={buttonStyles({ variant: "primary", size: "lg" })}
           >
             Start tracking for free
           </Link>
           <Link
             href="/sign-in"
-            className="inline-flex h-10 items-center rounded-md border border-white/10 px-4 text-sm font-medium text-zinc-300 transition hover:bg-white/6"
+            className={buttonStyles({ variant: "secondary", size: "lg" })}
           >
             Open your workspace
           </Link>
