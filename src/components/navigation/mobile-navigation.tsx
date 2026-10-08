@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import Button from "@/src/components/ui/button";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import MobileMenuToggle from "./mobile-menu-toggle";
@@ -53,14 +54,14 @@ export default function MobileNavigation({
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="flex justify-end px-3 pt-3">
-              <button
-                type="button"
+              <Button
+                variant="quiet"
+                size="icon"
                 aria-label="Close navigation"
                 onClick={closeNavigation}
-                className="grid size-9 place-items-center rounded-md text-zinc-400 hover:bg-white/[0.07]"
               >
                 <X size={18} aria-hidden="true" />
-              </button>
+              </Button>
             </div>
             {children}
           </aside>

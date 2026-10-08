@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonStyles } from "@/src/components/ui/button";
 import type { ProjectSummary } from "@/src/types";
 import DashboardStats from "./dashboard-stats";
 import RecentProjectsSection from "./recent-projects-section";
@@ -25,7 +26,7 @@ export default function DashboardOverview({
         <span className="text-sm font-medium text-zinc-400">Overview</span>
         <Link
           href="/projects"
-          className="h-9 rounded-md bg-brand px-3.5 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-brand-hover"
+          className={buttonStyles({ variant: "primary" })}
         >
           View projects
         </Link>
