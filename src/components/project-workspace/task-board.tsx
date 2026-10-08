@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
+import Button from "@/src/components/ui/button";
 import type { ProjectTask, TaskStatus } from "./types";
 
 const statusMeta: Record<TaskStatus, { label: string; dot: string }> = {
@@ -43,6 +44,7 @@ export default function TaskBoard({
           {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
         </span>
         <div
+          role="group"
           className="flex rounded-md border border-white/8 bg-white/3 p-0.5"
           aria-label="Filter tasks"
         >
@@ -51,8 +53,9 @@ export default function TaskBoard({
               <button
                 key={value}
                 type="button"
+                aria-pressed={filter === value}
                 onClick={() => setFilter(value)}
-                className={`rounded px-2.5 py-1 text-xs transition ${filter === value ? "bg-white/10 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"}`}
+                className={`cursor-pointer rounded px-2.5 py-1 text-xs transition ${filter === value ? "bg-white/10 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"}`}
               >
                 {value === "ALL" ? "All" : statusMeta[value].label}
               </button>
@@ -77,15 +80,17 @@ export default function TaskBoard({
                 {groupTasks.map((task) => (
                   <li
                     key={task.id}
-                    className="flex items-center gap-3 border-b border-white/[0.07] px-4 py-3 last:border-0"
+                    className="grid grid-cols-[20px_minmax(0,1fr)_7rem_2rem] items-center gap-2 border-b border-white/[0.07] px-3 py-3 last:border-0 sm:gap-3 sm:px-4"
                   >
-                    <span
-                      aria-hidden="true"
-                      className={`grid size-5 shrink-0 place-items-center rounded-full border ${task.status === "COMPLETE" ? "border-emerald-400 bg-emerald-400 text-zinc-950" : "border-zinc-600"}`}
-                    >
-                      {task.status === "COMPLETE" ? "✓" : ""}
-                    </span>
-                    <div className="min-w-0 flex-1">
+                    {task.status === "COMPLETE" && (
+                      <span
+                        aria-hidden="true"
+                        className="grid size-5 place-items-center rounded-full border border-emerald-400 bg-emerald-400 text-zinc-950"
+                      >
+                        ✓
+                      </span>
+                    )}
+                    <div className="col-start-2 min-w-0">
                       <p
                         className={`truncate text-sm ${task.status === "COMPLETE" ? "text-zinc-500 line-through" : "text-zinc-200"}`}
                       >
@@ -110,22 +115,24 @@ export default function TaskBoard({
                           event.target.value as TaskStatus,
                         )
                       }
-                      className="h-8 max-w-28 rounded-md border border-white/8 bg-[#202024] px-2 text-xs text-zinc-300 disabled:opacity-50"
+                      className="col-start-3 h-9 w-full rounded-md border border-white/10 bg-[#202024] px-2 text-xs text-zinc-200 transition-colors scheme-dark hover:border-white/20 hover:bg-[#26262b] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <option value="TODO">To do</option>
                       <option value="IN_PROGRESS">In progress</option>
                       <option value="COMPLETE">Complete</option>
                     </select>
-                    <button
+                    <Button
                       type="button"
+                      variant="destructive-quiet"
+                      size="icon-sm"
                       aria-label={`Delete ${task.title}`}
                       title={`Delete ${task.title}`}
                       disabled={pending}
                       onClick={() => onDeleteTask(task.id)}
-                      className="grid size-8 place-items-center rounded-md border border-transparent text-red-400 transition hover:border-red-400/20 hover:bg-red-400/10 hover:text-red-400 lg:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="col-start-4 lg:text-zinc-600"
                     >
                       <Trash2 size={15} aria-hidden="true" />
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>

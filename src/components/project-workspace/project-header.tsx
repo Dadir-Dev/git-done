@@ -1,5 +1,6 @@
 import { Trash2 } from "lucide-react";
 import Link from "next/link";
+import Button from "@/src/components/ui/button";
 
 export default function ProjectHeader({
   name,
@@ -25,22 +26,16 @@ export default function ProjectHeader({
         </Link>
         <div className="flex gap-2">
           {/* edit project button */}
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={onEdit}
-            className="hidden h-9 rounded-md border border-white/10 px-3 text-sm font-medium text-zinc-300 hover:bg-white/6 sm:block"
+            className="hidden sm:inline-flex"
           >
             Edit project
-          </button>
+          </Button>
 
           {/* add task button */}
-          <button
-            type="button"
-            onClick={onAddTask}
-            className="h-9 rounded-md bg-brand px-3.5 text-sm font-semibold text-zinc-950 transition hover:bg-brand-hover"
-          >
-            + Add task
-          </button>
+          <Button onClick={onAddTask}>+ Add task</Button>
         </div>
       </header>
       <div className="mx-auto max-w-4xl px-4 pt-8 sm:px-6 lg:px-8">
@@ -58,14 +53,10 @@ export default function ProjectHeader({
           </div>
 
           {/* delete project button */}
-          <button
-            type="button"
-            onClick={onDelete}
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-red-400/20 bg-red-400/10 px-3 text-xs font-medium text-red-300 transition hover:border-red-400/40 hover:bg-red-400/15 hover:text-red-200"
-          >
+          <Button variant="destructive-subtle" size="sm" onClick={onDelete}>
             <Trash2 size={15} aria-hidden="true" />
             Delete project
-          </button>
+          </Button>
         </div>
       </div>
     </>

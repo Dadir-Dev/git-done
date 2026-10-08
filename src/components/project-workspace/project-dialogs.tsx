@@ -2,6 +2,7 @@
 
 import type { SubmitEvent } from "react";
 import { Trash2 } from "lucide-react";
+import Button from "@/src/components/ui/button";
 import type { ProjectDetail } from "./types";
 
 type ProjectDialogType = "task" | "edit" | "delete" | null;
@@ -98,19 +99,12 @@ export default function ProjectDialogs({
             </p>
           )}
           <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-9 px-3 text-sm text-zinc-300"
-            >
+            <Button variant="quiet" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              disabled={pending}
-              className="h-9 rounded-md bg-brand px-4 text-sm font-semibold text-zinc-950 disabled:opacity-50"
-            >
+            </Button>
+            <Button type="submit" loading={pending}>
               {pending ? "Adding…" : "Add task"}
-            </button>
+            </Button>
           </div>
         </form>
       </DialogShell>
@@ -160,19 +154,12 @@ export default function ProjectDialogs({
             </p>
           )}
           <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-9 px-3 text-sm text-zinc-300"
-            >
+            <Button variant="quiet" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              disabled={pending}
-              className="h-9 rounded-md bg-brand px-4 text-sm font-semibold text-zinc-950 disabled:opacity-50"
-            >
+            </Button>
+            <Button type="submit" loading={pending}>
               {pending ? "Saving…" : "Save changes"}
-            </button>
+            </Button>
           </div>
         </form>
       </DialogShell>
@@ -196,22 +183,18 @@ export default function ProjectDialogs({
           </p>
         )}
         <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-9 px-3 text-sm text-zinc-300"
-          >
+          <Button variant="quiet" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            disabled={pending}
+            variant="destructive"
+            loading={pending}
             onClick={onDeleteProject}
-            className="inline-flex h-9 items-center gap-2 rounded-md bg-red-400 px-4 text-sm font-semibold text-zinc-950 transition hover:bg-red-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Trash2 size={15} aria-hidden="true" />
             {pending ? "Deleting…" : "Delete project"}
-          </button>
+          </Button>
         </div>
       </DialogShell>
     );
