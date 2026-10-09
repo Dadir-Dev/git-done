@@ -52,13 +52,18 @@ export async function createProject(
   }
 }
 
-export async function getProjectById(
-  projectId: string,
-): Promise<ActionResult<Project & { tasks: Task[] }>> {
+export async function getProjectById(projectId: string): Promise<
+  | { success: true; data: Project & { tasks: Task[] } }
+  | {
+      success: false;
+      code: "UNAUTHORIZED" | "NOT_FOUND" | "INTERNAL";
+      error: string;
+    }
+> {
   const { userId } = await auth();
 
   if (!userId) {
-    return { success: false, error: "Unauthorized" };
+    return { success: false, code: "UNAUTHORIZED", error: "Unauthorized" };
   }
 
   try {
@@ -68,13 +73,21 @@ export async function getProjectById(
     });
 
     if (!project) {
-      return { success: false, error: "Project not found" };
+      return {
+        success: false,
+        code: "NOT_FOUND",
+        error: "Project not found",
+      };
     }
 
     return { success: true, data: project };
   } catch (error) {
     console.error("Failed to get project:", error);
-    return { success: false, error: "Something went wrong. Please try again." };
+    return {
+      success: false,
+      code: "INTERNAL",
+      error: "Something went wrong. Please try again.",
+    };
   }
 }
 
