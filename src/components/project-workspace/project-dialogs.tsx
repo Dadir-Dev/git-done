@@ -16,6 +16,7 @@ function DialogShell({
   children: React.ReactNode;
   onClose: () => void;
 }) {
+  // The panel stops this event from bubbling so only a backdrop click dismisses the dialog.
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4"
@@ -53,7 +54,7 @@ export default function ProjectDialogs({
   onUpdateProject: (input: UpdateProjectInput) => void;
   onDeleteProject: () => void;
 }) {
-  // open task dialog if dialog is "task"
+  // Mount only the active dialog so switching or closing it discards stale form state.
   if (dialog === "task") {
     return (
       <DialogShell onClose={onClose}>
@@ -66,9 +67,14 @@ export default function ProjectDialogs({
           onSubmit={(event: SubmitEvent<HTMLFormElement>) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
+            const title = String(form.get("title") ?? "");
+            // Omit blank optional text so create actions receive undefined instead of an empty string.
+            const description =
+              String(form.get("description") ?? "") || undefined;
+
             onCreateTask({
-              title: String(form.get("title") ?? ""),
-              description: String(form.get("description") ?? "") || undefined,
+              title,
+              description,
             });
           }}
         >
@@ -121,9 +127,15 @@ export default function ProjectDialogs({
           onSubmit={(event: SubmitEvent<HTMLFormElement>) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
+
+            const name = String(form.get("name") ?? "");
+            // Undefined is omitted by the partial update, preserving the saved description when blank.
+            const description =
+              String(form.get("description") ?? "") || undefined;
+
             onUpdateProject({
-              name: String(form.get("name") ?? ""),
-              description: String(form.get("description") ?? "") || undefined,
+              name,
+              description,
             });
           }}
         >
