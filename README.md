@@ -156,15 +156,31 @@ CLERK_WEBHOOK_SIGNING_SECRET="whsec_..."
 
 ### 4. Setup Database & Prisma v7
 
-Generate the Prisma 7 client and push the database schema:
+Generate the Prisma 7 client (configured via `prisma7.config.ts`):
 
 ```bash
-# Generate Prisma Client (configured via prisma7.config.ts)
 npx prisma generate --config prisma7.config.ts
-
-# Push schema directly to your Neon database
-npx prisma db push --config prisma7.config.ts
 ```
+
+Then apply the schema. **Choose the command based on the target database:**
+
+```bash
+# Local or disposable development database only — fast, no migration history
+npx prisma db push --config prisma7.config.ts
+
+# Any shared database (staging or production) — reviewed migrations, applied in order
+npx prisma migrate dev --config prisma7.config.ts --name <migration-name>
+npx prisma migrate deploy --config prisma7.config.ts
+```
+
+> [!IMPORTANT]
+> `prisma db push` must never be run against a shared or production database. It applies the
+> schema without producing a migration, so the database can drift from what is committed.
+>
+> Shared environments (staging, production) must be changed only through reviewed migration
+> files committed under `prisma/migrations/` and applied with `prisma migrate deploy`. Generate
+> them with `prisma migrate dev`, review the SQL, and promote the same artifacts to every
+> environment. Migrations are immutable once shared or deployed.
 
 ### 5. Start the Development Server
 
@@ -229,7 +245,11 @@ git-done/
    - `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`
    - `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`
    - `CLERK_WEBHOOK_SIGNING_SECRET`
-4. **Deploy:** Click **Deploy**. Vercel will automatically build the Next.js app.
+4. **Apply migrations to the production database** before or during release — never `db push`:
+   ```bash
+   npx prisma migrate deploy --config prisma7.config.ts
+   ```
+5. **Deploy:** Click **Deploy**. Vercel will automatically build the Next.js app.
 
 ### Setting up Clerk Webhooks (Production)
 
