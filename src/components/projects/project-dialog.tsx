@@ -3,7 +3,8 @@
 import { createProject } from "@/src/actions/project.actions";
 import Button from "@/src/components/ui/button";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import type { SubmitEvent } from "react";
 
 export default function ProjectDialog({
   open,
@@ -25,14 +26,14 @@ export default function ProjectDialog({
 
   if (!open) return null;
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const name = String(form.get("name") ?? "");
+    const description = String(form.get("description") ?? "") || undefined;
+
     startTransition(async () => {
-      const result = await createProject({
-        name: String(form.get("name") ?? ""),
-        description: String(form.get("description") ?? "") || undefined,
-      });
+      const result = await createProject({ name, description });
       if (!result.success) {
         setError(result.error);
         return;
