@@ -15,7 +15,7 @@ endpoint. Zero tests. No prisma migrations folder (db push).
 | Stage | Topic | Depends on | Notes file | Status |
 |---|---|---|---|---|
 | 0 | Execution model: Server/Client Components, Server Actions on the wire, `proxy.ts` vs `auth.protect()` | — | `stage-00-execution-model.md` | ✅ Completed 2026-10-22 |
-| 1 | One mutation end-to-end: `createProject` trace, `ActionResult<T>` contract, error paths | 0 | `stage-01-one-mutation.md` | ⬜ Not started |
+| 1 | One mutation end-to-end: `createProject` trace, `ActionResult<T>` contract, error paths | 0 | `stage-01-one-mutation.md` | 🕒 In progress (lesson given 2026-11-03, awaiting student answers) |
 | 2 | Data layer: schema, relations, FK cascade, indexes, Prisma 7 driver adapter, client singleton, `revalidatePath` caching | 1 | `stage-02-data-layer.md` | ⬜ Not started |
 | 3 | Identity: Clerk session mechanics, webhook + JIT sync (`ensureAppUser`), auth vs sync | 0, 2 | `stage-03-identity.md` | ⬜ Not started |
 | 4 | Authorization: ownership-in-`where` pattern, P2025 semantics, `createTask` TOCTOU race, tenant-isolation audit | 1, 2, 3 | `stage-04-authorization.md` | ⬜ Not started |
@@ -25,6 +25,11 @@ endpoint. Zero tests. No prisma migrations folder (db push).
 | 8 | Production readiness: N+1 in `getProjects`, pagination, migrations, minimal test strategy, Neon scale-to-zero, final rebuild-from-memory capstone | 2, 6 | `stage-08-production.md` | ⬜ Not started |
 
 Stages 5–8 deliberately re-attack the same files from a new angle (rehearsal, not new material).
+
+> **Re-verified 2026-11-03 by a new (independent) session:** findings 1–9 below were re-checked
+> against the current tree and all still hold. Added during re-inspection: Prisma 7 is being relied
+> on for non-unique `where` filters in `update`/`delete` (`where: { id, userId }`) — verify against
+> generated client types + `node_modules/next/dist/docs` in Stage 4 before teaching as fact.
 
 ## Verified findings carried forward (from initial inspection, 2026-10-22)
 
