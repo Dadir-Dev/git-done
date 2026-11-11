@@ -59,9 +59,9 @@ export default function ProjectWorkspace({
       <ProjectHeader
         name={project.name}
         description={project.description}
-        onEdit={() => setDialog("edit")}
+        onEditProject={() => setDialog("edit")}
         onAddTask={() => setDialog("task")}
-        onDelete={() => setDialog("delete")}
+        onDeleteProject={() => setDialog("delete")}
       />
       <div className="mx-auto max-w-4xl px-4 pb-8 sm:px-6 lg:px-8 lg:pb-10">
         <TaskBoard

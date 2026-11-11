@@ -5,15 +5,15 @@ import Button from "@/src/components/ui/button";
 export default function ProjectHeader({
   name,
   description,
-  onEdit,
+  onEditProject,
   onAddTask,
-  onDelete,
+  onDeleteProject,
 }: {
   name: string;
   description: string | null;
-  onEdit: () => void;
+  onEditProject: () => void;
   onAddTask: () => void;
-  onDelete: () => void;
+  onDeleteProject: () => void;
 }) {
   return (
     <>
@@ -28,7 +28,7 @@ export default function ProjectHeader({
           {/* edit project button */}
           <Button
             variant="secondary"
-            onClick={onEdit}
+            onClick={onEditProject}
             className="hidden sm:inline-flex"
           >
             Edit project
@@ -53,7 +53,11 @@ export default function ProjectHeader({
           </div>
 
           {/* delete project button */}
-          <Button variant="destructive-subtle" size="sm" onClick={onDelete}>
+          <Button
+            variant="destructive-subtle"
+            size="sm"
+            onClick={onDeleteProject}
+          >
             <Trash2 size={15} aria-hidden="true" />
             Delete project
           </Button>
