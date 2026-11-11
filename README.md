@@ -132,14 +132,29 @@ npm install
 
 ### 3. Configure Environment Variables
 
-Create a `.env` file in the root directory:
+The project uses three Neon branches and one Vercel project:
+
+| Environment | Neon branch | Clerk instance | Variables live in |
+| --- | --- | --- | --- |
+| Local development | `development` | Development (`pk_test_...`) | `.env` |
+| Vercel Preview | `preview` | Development (`pk_test_...`) | Vercel -> Preview |
+| Vercel Production | `production` | Development until a custom domain is ready | Vercel -> Production |
+
+Create a `.env` file for local development:
 
 ```env
 # ── Database (Neon PostgreSQL) ──
-DATABASE_URL="postgresql://<user>:<password>@<neon-pooler-host>/neondb?sslmode=require&channel_binding=require"
+# Local app traffic may use the direct URL. Deployed environments use the pooled URL.
+DATABASE_URL="postgresql://<user>:<password>@<neon-direct-host>/neondb?sslmode=require&channel_binding=require"
 DATABASE_URL_POOLED="postgresql://<user>:<password>@<neon-pooler-host>/neondb?sslmode=require&channel_binding=require"
 DATABASE_URL_UNPOOLED="postgresql://<user>:<password>@<neon-direct-host>/neondb?sslmode=require&channel_binding=require"
-NEON_BRANCH="production"
+DIRECT_URL="postgresql://<user>:<password>@<neon-direct-host>/neondb?sslmode=require&channel_binding=require"
+NEON_BRANCH="development"
+
+# ── Seed data (development and preview only) ──
+SEED_USER_ID="user_..."
+SEED_USER_EMAIL="you@example.com"
+SEED_USER_NAME="Your Name"
 
 # ── Authentication (Clerk) ──
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
@@ -154,33 +169,61 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/dashboard"
 CLERK_WEBHOOK_SIGNING_SECRET="whsec_..."
 ```
 
+> `DIRECT_URL` is optional locally because `prisma7.config.ts` falls back to
+> `DATABASE_URL_UNPOOLED` and then `DATABASE_URL`. It is required on Vercel so
+> `prisma migrate deploy` uses a direct connection instead of the pooled one.
+
 ### 4. Setup Database & Prisma v7
 
 Generate the Prisma 7 client (configured via `prisma7.config.ts`):
 
 ```bash
-npx prisma generate --config prisma7.config.ts
+npm run db:generate
 ```
 
-Then apply the schema. **Choose the command based on the target database:**
+Apply migrations:
 
 ```bash
-# Local or disposable development database only — fast, no migration history
-npx prisma db push --config prisma7.config.ts
+# Fresh branch with no schema yet
+npm run db:deploy
 
-# Any shared database (staging or production) — reviewed migrations, applied in order
-npx prisma migrate dev --config prisma7.config.ts --name <migration-name>
-npx prisma migrate deploy --config prisma7.config.ts
+# Existing database that already has the schema but no Prisma migration history
+# (run once per branch; records the baseline as applied without re-running it)
+npx prisma migrate resolve --applied 20261111195000_init --config prisma7.config.ts
+
+# New schema change (run on the development branch only)
+npm run db:migrate -- --name <migration-name>
+
+# Check migration state for the current DATABASE_URL
+npm run db:status
+```
+
+Seed development or preview with realistic projects and tasks:
+
+```bash
+npm run db:seed
+
+# Recreate the seed projects from scratch:
+SEED_RESET=true npm run db:seed
+```
+
+To run a command against a specific Neon branch, point both database variables at
+that branch for the current shell. For example, on PowerShell:
+
+```powershell
+$env:DATABASE_URL = npx neonctl connection-string preview --project-id <project-id>
+$env:DIRECT_URL = $env:DATABASE_URL
+npm run db:deploy
 ```
 
 > [!IMPORTANT]
 > `prisma db push` must never be run against a shared or production database. It applies the
 > schema without producing a migration, so the database can drift from what is committed.
 >
-> Shared environments (staging, production) must be changed only through reviewed migration
+> Shared environments (preview, production) must be changed only through reviewed migration
 > files committed under `prisma/migrations/` and applied with `prisma migrate deploy`. Generate
-> them with `prisma migrate dev`, review the SQL, and promote the same artifacts to every
-> environment. Migrations are immutable once shared or deployed.
+> them on `development` with `prisma migrate dev`, review the SQL, and promote the same
+> artifacts to every environment. Migrations are immutable once shared or deployed.
 
 ### 5. Start the Development Server
 
@@ -234,22 +277,51 @@ git-done/
    git push origin main
    ```
 2. **Import the repository** into [Vercel](https://vercel.com/new).
-3. **Set the Environment Variables** in your Vercel Project Settings:
-   - `DATABASE_URL`
-   - `DATABASE_URL_POOLED`
-   - `DATABASE_URL_UNPOOLED`
-   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
-   - `CLERK_SECRET_KEY`
-   - `NEXT_PUBLIC_CLERK_SIGN_IN_URL`
-   - `NEXT_PUBLIC_CLERK_SIGN_UP_URL`
-   - `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`
-   - `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`
-   - `CLERK_WEBHOOK_SIGNING_SECRET`
-4. **Apply migrations to the production database** before or during release — never `db push`:
+3. **Create the Neon branches** (one project, three branches):
+
    ```bash
-   npx prisma migrate deploy --config prisma7.config.ts
+   # production is the default branch; development and preview are schema-only children
+   npx neonctl branches create --project-id <project-id> --name development --parent production --schema-only
+   npx neonctl branches create --project-id <project-id> --name preview --parent production --schema-only
    ```
-5. **Deploy:** Click **Deploy**. Vercel will automatically build the Next.js app.
+
+4. **Set the Environment Variables** in Vercel Project Settings. Use the pooled
+   URL for `DATABASE_URL` and the direct URL for `DATABASE_URL_UNPOOLED`:
+
+   | Variable | Production | Preview |
+   | --- | --- | --- |
+   | `DATABASE_URL` | `production` pooled | `preview` pooled |
+   | `DATABASE_URL_POOLED` | `production` pooled | `preview` pooled |
+   | `DATABASE_URL_UNPOOLED` | `production` direct | `preview` direct |
+   | `NEON_BRANCH` | `production` | `preview` |
+   | Clerk keys | Development instance | Development instance |
+
+   Keep the Clerk keys identical across Preview and Production while the Clerk
+   app is still in development mode. `ensureAppUser` creates users on first
+   request, so Preview does not need its own webhook endpoint.
+
+5. **Apply migrations to preview and production** before or during release — never `db push`:
+
+   ```powershell
+   $env:DATABASE_URL = npx neonctl connection-string production --project-id <project-id>
+   $env:DIRECT_URL = $env:DATABASE_URL
+   npm run db:deploy
+   ```
+
+6. **Deploy:** Click **Deploy**. Vercel builds Production from `main` and Preview
+   from every other branch or pull request.
+
+### Moving Clerk to production later
+
+Clerk production instances require a custom domain you control; a `*.vercel.app`
+URL is not enough. When you are ready:
+
+1. Add the domain to Clerk and create the production instance.
+2. Point the DNS records Clerk provides at that domain.
+3. Replace the Clerk keys in **Vercel -> Production** with the `pk_live_...` / `sk_live_...` values.
+4. Keep the development keys in **Vercel -> Preview** and local `.env`.
+5. User IDs do not carry over between Clerk instances. If production has real
+   data, migrate or re-map users by email before switching.
 
 ### Setting up Clerk Webhooks (Production)
 
