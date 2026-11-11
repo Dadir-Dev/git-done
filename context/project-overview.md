@@ -339,7 +339,7 @@ Recorded so they are not lost. None block the MVP.
 
 1. **`getProjects()` has no pagination** — a `// TODO: Add pagination` marks it in `src/actions/project.actions.ts`.
 2. **N+1 completed-count queries** — `getProjects()` issues one `task.count()` per project inside `Promise.all`. Fine at current library sizes; replace with a single grouped count when project counts grow.
-3. **No migration history yet** — `prisma/migrations/` does not exist, so any database provisioned before the migration policy was adopted would need to be baselined before `prisma migrate deploy` can be used against it.
+3. **Migration history is baselined** — `prisma/migrations/20261111195000_init` records the existing schema. The `development`, `preview`, and `production` branches were baselined with `prisma migrate resolve --applied`; future schema changes should be generated on `development` with `npm run db:migrate` and promoted with `npm run db:deploy`.
 4. **`package.json` is named `project-tracker`** — the pre-rename identifier. Cosmetic, but worth correcting.
 5. **No automated test runner** is configured. See the quality gates in [coding standards](./coding-standards.md).
 
