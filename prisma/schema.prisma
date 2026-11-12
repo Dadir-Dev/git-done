@@ -60,6 +60,7 @@ model Task {
   id          String     @id @default(cuid())
   title       String
   description String?
+  dueDate     DateTime?  @db.Date
   status      TaskStatus @default(TODO)
 
   projectId   String
