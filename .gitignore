@@ -47,3 +47,6 @@ next-env.d.ts
 
 .agents
 .claude
+
+# local learning notes (kept on disk, not published)
+/docs/learning
