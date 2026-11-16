@@ -9,8 +9,12 @@ import {
   updateProjectSchema,
   type UpdateProjectInput,
 } from "@/src/lib/validations/project.schema";
-import { ActionResult } from "@/src/types";
-import { Project, type Task } from "@/src/app/generated/prisma/client";
+import type {
+  ActionResult,
+  ProjectDetail,
+  ProjectSummary,
+} from "@/src/types";
+import { Project } from "@/src/app/generated/prisma/client";
 import { Prisma } from "@/src/app/generated/prisma/client";
 import { ensureAppUser } from "@/src/lib/ensure-app-user";
 
@@ -53,7 +57,7 @@ export async function createProject(
 }
 
 export async function getProjectById(projectId: string): Promise<
-  | { success: true; data: Project & { tasks: Task[] } }
+  | { success: true; data: ProjectDetail }
   | {
       success: false;
       code: "UNAUTHORIZED" | "NOT_FOUND" | "INTERNAL";
@@ -80,7 +84,24 @@ export async function getProjectById(projectId: string): Promise<
       };
     }
 
-    return { success: true, data: project };
+    return {
+      success: true,
+      data: {
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        tasks: project.tasks.map((task) => ({
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          status: task.status,
+          // Stored as a `Date` at UTC midnight; the wire carries the day only.
+          dueDate: task.dueDate
+            ? task.dueDate.toISOString().slice(0, 10)
+            : null,
+        })),
+      },
+    };
   } catch (error) {
     console.error("Failed to get project:", error);
     return {
@@ -161,9 +182,7 @@ export async function deleteProject(
 }
 
 // TODO: Add pagination
-export async function getProjects(): Promise<
-  ActionResult<(Project & { taskCount: number; completedCount: number })[]>
-> {
+export async function getProjects(): Promise<ActionResult<ProjectSummary[]>> {
   // auth guard
   const { userId } = await auth();
   if (!userId) return { success: false, error: "Unauthorized" };
@@ -188,7 +207,16 @@ export async function getProjects(): Promise<
     );
 
     // standard response(ActionResult object)
-    return { success: true, data: withCompleted };
+    return {
+      success: true,
+      data: withCompleted.map((project) => ({
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        taskCount: project.taskCount,
+        completedCount: project.completedCount,
+      })),
+    };
   } catch (error) {
     console.error("Failed to fetch projects:", error);
     return { success: false, error: "Something went wrong. Please try again." };

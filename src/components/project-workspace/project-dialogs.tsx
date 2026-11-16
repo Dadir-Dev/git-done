@@ -3,7 +3,7 @@
 import type { SubmitEvent } from "react";
 import { Trash2 } from "lucide-react";
 import Button from "@/src/components/ui/button";
-import type { ProjectDetail } from "./types";
+import type { ProjectDetail } from "@/src/types";
 
 type ProjectDialogType = "task" | "edit" | "delete" | null;
 type CreateTaskInput = { title: string; description?: string };

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import Button from "@/src/components/ui/button";
-import type { ProjectTask, TaskStatus } from "./types";
+import type { ProjectTask, TaskStatus } from "@/src/types";
 
 const statusMeta: Record<TaskStatus, { label: string; dot: string }> = {
   TODO: { label: "To do", dot: "bg-zinc-500" },
