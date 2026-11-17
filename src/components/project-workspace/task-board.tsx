@@ -101,6 +101,12 @@ export default function TaskBoard({
                           {task.description}
                         </p>
                       )}
+
+                      {task.dueDate && (
+                        <p className="mt-0.5 text-xs text-zinc-500">
+                          Due {task.dueDate}
+                        </p>
+                      )}
                     </div>
                     <label className="sr-only" htmlFor={`status-${task.id}`}>
                       Status for {task.title}
