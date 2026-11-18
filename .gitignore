@@ -47,3 +47,9 @@ next-env.d.ts
 
 .agents
 .claude
+
+# feature reviews
+docs/features-review
+
+# reference files
+docs/reference
