@@ -102,7 +102,7 @@ export default function ProjectDialogs({
               id="create-dueDate"
               type="date"
               name="dueDate"
-              className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3 text-sm text-zinc-100"
+              className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3 text-sm text-zinc-100 scheme-dark"
             />
           </label>
           <label className="block text-sm font-medium text-zinc-300">
