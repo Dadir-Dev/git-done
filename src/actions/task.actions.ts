@@ -48,10 +48,14 @@ export async function createTask(
 
   // create task
   try {
+    // take dueDate out and put it back as a Date
+    const { dueDate, ...rest } = parsed.data;
+
     const task = await prisma.task.create({
       data: {
-        ...parsed.data,
+        ...rest,
         projectId,
+        dueDate: dueDate ? new Date(`${dueDate}T00:00:00.000Z`) : null,
       },
     });
 

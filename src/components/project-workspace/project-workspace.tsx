@@ -9,10 +9,7 @@ import {
 import ProjectDialogs from "@/src/components/project-workspace/project-dialogs";
 import ProjectHeader from "@/src/components/project-workspace/project-header";
 import TaskBoard from "@/src/components/project-workspace/task-board";
-import type {
-  ProjectDetail,
-  TaskStatus,
-} from "@/src/components/project-workspace/types";
+import type { ProjectDetail, TaskStatus } from "@/src/types";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 

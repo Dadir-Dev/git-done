@@ -3,11 +3,11 @@
 import type { SubmitEvent } from "react";
 import { Trash2 } from "lucide-react";
 import Button from "@/src/components/ui/button";
-import type { ProjectDetail } from "./types";
+import type { ProjectDetail } from "@/src/types";
+import type { CreateTaskInput } from "@/src/lib/validations/task.schema";
+import type { UpdateProjectInput } from "@/src/lib/validations/project.schema";
 
 type ProjectDialogType = "task" | "edit" | "delete" | null;
-type CreateTaskInput = { title: string; description?: string };
-type UpdateProjectInput = { name: string; description?: string };
 
 function DialogShell({
   children,
@@ -68,12 +68,16 @@ export default function ProjectDialogs({
             event.preventDefault();
             const form = new FormData(event.currentTarget);
             const title = String(form.get("title") ?? "");
+            // Empty string is the control's "no date"; the schema maps it to null.
+            const dueDate = String(form.get("dueDate") ?? "");
+
             // Omit blank optional text so create actions receive undefined instead of an empty string.
             const description =
               String(form.get("description") ?? "") || undefined;
 
             onCreateTask({
               title,
+              dueDate,
               description,
             });
           }}
@@ -87,6 +91,18 @@ export default function ProjectDialogs({
               maxLength={200}
               className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3 text-sm text-zinc-100"
               placeholder="e.g. Define the homepage content"
+            />
+          </label>
+          <label
+            htmlFor="create-dueDate"
+            className="block text-sm font-medium text-zinc-300"
+          >
+            Due date
+            <input
+              id="create-dueDate"
+              type="date"
+              name="dueDate"
+              className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3 text-sm text-zinc-100 scheme-dark"
             />
           </label>
           <label className="block text-sm font-medium text-zinc-300">

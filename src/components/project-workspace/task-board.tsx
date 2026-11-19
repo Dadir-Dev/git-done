@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import Button from "@/src/components/ui/button";
-import type { ProjectTask, TaskStatus } from "./types";
+import type { ProjectTask, TaskStatus } from "@/src/types";
 
 const statusMeta: Record<TaskStatus, { label: string; dot: string }> = {
   TODO: { label: "To do", dot: "bg-zinc-500" },
@@ -99,6 +99,12 @@ export default function TaskBoard({
                       {task.description && (
                         <p className="mt-0.5 truncate text-xs text-zinc-500">
                           {task.description}
+                        </p>
+                      )}
+
+                      {task.dueDate && (
+                        <p className="mt-0.5 text-xs text-zinc-500">
+                          Due {task.dueDate}
                         </p>
                       )}
                     </div>

@@ -50,3 +50,9 @@ next-env.d.ts
 
 # local learning notes (kept on disk, not published)
 /docs/learning
+
+# feature reviews
+docs/features-review
+
+# reference files
+docs/reference
