@@ -1,0 +1,88 @@
+name: CI
+
+# The gate before the merge. CD already exists (Vercel builds on main);
+# this job is what makes a merge to main checked instead of hoped for.
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # A disposable Postgres. The integration canary writes and deletes rows,
+    # so it gets its own database instead of the shared development branch.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gitdone_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Shell env wins over tests/setup.ts's dotenv, so the test uses this
+      # database, not a .env file. DIRECT_URL is deliberately unset:
+      # prisma7.config.ts falls through to DATABASE_URL.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gitdone_test
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      # npm ci validates the whole lockfile. This lock was generated on Windows,
+      # where the optional wasm fallbacks (@img/sharp-wasm32,
+      # @tailwindcss/oxide-wasm32-wasi) are not resolved, so Linux rejects it as
+      # missing @emnapi/*. npm install resolves the tree instead of validating it.
+      # Restore npm ci once the lock is regenerated on Linux.
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      # src/lib/prisma.ts imports the generated client, which lives in
+      # src/app/generated/prisma. Regenerate so CI cannot pass on a stale client.
+      - name: Generate Prisma client
+        run: npx prisma generate --config prisma7.config.ts
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy --config prisma7.config.ts
+
+      # LayoutProps/PageProps are generated into .next/types, and next-env.d.ts
+      # is gitignored. A clean CI checkout has neither, so tsc cannot resolve them.
+      - name: Generate Next.js route types
+        run: npx next typegen
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
