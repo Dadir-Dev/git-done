@@ -73,6 +73,11 @@ jobs:
       - name: Apply migrations
         run: npx prisma migrate deploy --config prisma7.config.ts
 
+      # LayoutProps/PageProps are generated into .next/types, and next-env.d.ts
+      # is gitignored. A clean CI checkout has neither, so tsc cannot resolve them.
+      - name: Generate Next.js route types
+        run: npx next typegen
+
       - name: Typecheck
         run: npx tsc --noEmit
 
