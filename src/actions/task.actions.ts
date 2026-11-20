@@ -55,7 +55,7 @@ export async function createTask(
       data: {
         ...rest,
         projectId,
-        dueDate: dueDate,
+        dueDate: dueDate ? new Date(`${dueDate}T00:00:00.000Z`) : null,
       },
     });
 
