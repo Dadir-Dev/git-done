@@ -57,8 +57,13 @@ jobs:
           node-version: 24
           cache: npm
 
+      # npm ci validates the whole lockfile. This lock was generated on Windows,
+      # where the optional wasm fallbacks (@img/sharp-wasm32,
+      # @tailwindcss/oxide-wasm32-wasi) are not resolved, so Linux rejects it as
+      # missing @emnapi/*. npm install resolves the tree instead of validating it.
+      # Restore npm ci once the lock is regenerated on Linux.
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       # src/lib/prisma.ts imports the generated client, which lives in
       # src/app/generated/prisma. Regenerate so CI cannot pass on a stale client.
