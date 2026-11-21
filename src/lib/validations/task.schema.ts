@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const taskStatusEnum = z.enum(["TODO", "IN_PROGRESS", "COMPLETE"]);
+export const taskPriorityEnum = z.enum(["LOW", "MEDIUM", "HIGH"]);
 
 /**
  * A calendar day that actually exists, written as YYYY-MM-DD.
@@ -49,6 +50,7 @@ export const createTaskSchema = z.object({
     .transform((value) => (value === "" ? null : value))
     .nullable()
     .optional(),
+  priority: taskPriorityEnum.optional(),
   status: taskStatusEnum.default("TODO"),
 });
 
@@ -57,3 +59,4 @@ export const updateTaskSchema = createTaskSchema.partial();
 export type CreateTaskInput = z.input<typeof createTaskSchema>;
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 export type TaskStatus = z.infer<typeof taskStatusEnum>;
+export type TaskPriority = z.infer<typeof taskPriorityEnum>;

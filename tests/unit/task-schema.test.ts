@@ -42,3 +42,37 @@ describe("createTaskSchema — dueDate (YYYY-MM-DD)", () => {
     expect(result.error?.issues[0]?.message).toBe("Use YYYY-MM-DD");
   });
 });
+
+// === priority ===
+const parseWithPriority = (priority?: string) =>
+  createTaskSchema.safeParse({ title: "Probe task", priority });
+
+describe("createTaskSchema — priority", () => {
+  it("accepts each priority value", () => {
+    const priorities = ["LOW", "MEDIUM", "HIGH"] as const;
+
+    for (const priority of priorities) {
+      const result = parseWithPriority(priority);
+
+      expect(result.success).toBe(true);
+      expect(result.data?.priority).toBe(priority);
+    }
+  });
+
+  it("rejects an unknown priority", () => {
+    const result = parseWithPriority("URGENT");
+
+    expect(result.success).toBe(false);
+  });
+
+  it("leaves an absent priority absent", () => {
+    const result = createTaskSchema.safeParse({ title: "x" });
+
+    expect(result.success).toBe(true);
+
+    // This test is the fast pin for the landmine of a default value. If the schema were to change to defaulting to "MEDIUM", this test would fail, and the change would be caught before it reached production.
+    if (result.success) {
+      expect(result.data.priority).toBeUndefined();
+    }
+  });
+});
