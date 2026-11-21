@@ -4,7 +4,10 @@ import type { SubmitEvent } from "react";
 import { Trash2 } from "lucide-react";
 import Button from "@/src/components/ui/button";
 import type { ProjectDetail } from "@/src/types";
-import type { CreateTaskInput } from "@/src/lib/validations/task.schema";
+import type {
+  CreateTaskInput,
+  TaskPriority,
+} from "@/src/lib/validations/task.schema";
 import type { UpdateProjectInput } from "@/src/lib/validations/project.schema";
 
 type ProjectDialogType = "task" | "edit" | "delete" | null;
@@ -70,6 +73,9 @@ export default function ProjectDialogs({
             const title = String(form.get("title") ?? "");
             // Empty string is the control's "no date"; the schema maps it to null.
             const dueDate = String(form.get("dueDate") ?? "");
+            const priority = String(
+              form.get("priority") ?? "MEDIUM",
+            ) as TaskPriority;
 
             // Omit blank optional text so create actions receive undefined instead of an empty string.
             const description =
@@ -78,6 +84,7 @@ export default function ProjectDialogs({
             onCreateTask({
               title,
               dueDate,
+              priority,
               description,
             });
           }}
@@ -104,6 +111,22 @@ export default function ProjectDialogs({
               name="dueDate"
               className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3 text-sm text-zinc-100 scheme-dark"
             />
+          </label>
+          <label
+            htmlFor="create-priority"
+            className="block text-sm font-medium text-zinc-300"
+          >
+            Priority
+            <select
+              id="create-priority"
+              name="priority"
+              className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3 text-sm text-zinc-100 scheme-dark"
+              defaultValue="MEDIUM"
+            >
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+            </select>
           </label>
           <label className="block text-sm font-medium text-zinc-300">
             Details <span className="font-normal text-zinc-500">optional</span>

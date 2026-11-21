@@ -9,11 +9,7 @@ import {
   updateProjectSchema,
   type UpdateProjectInput,
 } from "@/src/lib/validations/project.schema";
-import type {
-  ActionResult,
-  ProjectDetail,
-  ProjectSummary,
-} from "@/src/types";
+import type { ActionResult, ProjectDetail, ProjectSummary } from "@/src/types";
 import { Project } from "@/src/app/generated/prisma/client";
 import { Prisma } from "@/src/app/generated/prisma/client";
 import { ensureAppUser } from "@/src/lib/ensure-app-user";
@@ -96,9 +92,9 @@ export async function getProjectById(projectId: string): Promise<
           description: task.description,
           status: task.status,
           // Stored as a `Date` at UTC midnight; the wire carries the day only.
-          dueDate: task.dueDate
-            ? task.dueDate.toISOString().slice(0, 10)
-            : null,
+          dueDate:
+            task.dueDate ? task.dueDate.toISOString().slice(0, 10) : null,
+          priority: task.priority,
         })),
       },
     };
