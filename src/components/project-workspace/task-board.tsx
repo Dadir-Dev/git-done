@@ -107,6 +107,12 @@ export default function TaskBoard({
                           Due {task.dueDate}
                         </p>
                       )}
+
+                      {task.priority && (
+                        <p className="mt-0.5 text-xs text-zinc-500">
+                          Priority: {task.priority}
+                        </p>
+                      )}
                     </div>
                     <label className="sr-only" htmlFor={`status-${task.id}`}>
                       Status for {task.title}

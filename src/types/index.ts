@@ -1,6 +1,9 @@
-import type { TaskStatus } from "@/src/lib/validations/task.schema";
+import type {
+  TaskPriority,
+  TaskStatus,
+} from "@/src/lib/validations/task.schema";
 
-export type { TaskStatus };
+export type { TaskPriority, TaskStatus };
 
 /**
  * Wire shapes: what a server action returns and a client component receives.
@@ -14,6 +17,7 @@ export type ProjectTask = {
   description: string | null;
   status: TaskStatus;
   dueDate: string | null;
+  priority: TaskPriority;
 };
 
 export type ProjectDetail = {
