@@ -48,6 +48,7 @@ model Project {
   id          String   @id @default(cuid())
   name        String
   description String?
+  dueDate     DateTime? @db.Date
 
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
