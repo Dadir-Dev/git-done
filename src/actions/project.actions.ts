@@ -42,7 +42,6 @@ export async function createProject(
         userId,
         // The action owns the one conversion; the schema stays string-shaped.
         dueDate: dueDate ? new Date(`${dueDate}T00:00:00.000Z`) : null,
-        // age: "Dadir",
       },
     });
 
