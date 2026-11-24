@@ -134,9 +134,17 @@ export async function updateProject(
   }
 
   try {
+    const { dueDate, ...rest } = parsed.data;
+    const data = {
+      ...rest,
+      ...(dueDate === undefined ?
+        {}
+      : { dueDate: dueDate ? new Date(`${dueDate}T00:00:00.000Z`) : null }),
+    };
+
     const project = await prisma.project.update({
       where: { id: projectId, userId },
-      data: parsed.data,
+      data,
     });
 
     revalidatePath("/dashboard");
