@@ -39,6 +39,11 @@ export default function ProjectsList({
                     <p className="mt-1 truncate text-xs text-zinc-500">
                       {project.description || "No description"}
                     </p>
+                    {project.dueDate && (
+                      <p className="mt-0.5 truncate text-xs text-zinc-500">
+                        Due {project.dueDate}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <div className="flex justify-between text-xs text-zinc-500">

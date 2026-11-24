@@ -24,6 +24,7 @@ export type ProjectDetail = {
   id: string;
   name: string;
   description: string | null;
+  dueDate: string | null; // YYYY-MM-DD, sliced at the producer
   tasks: ProjectTask[];
 };
 
@@ -31,6 +32,7 @@ export type ProjectSummary = {
   id: string;
   name: string;
   description: string | null;
+  dueDate: string | null;
   taskCount: number;
   completedCount: number;
 };
