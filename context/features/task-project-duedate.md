@@ -5,7 +5,7 @@
 | Status       | inc. 1 shipped · inc. 2 shipped      |
 | Created      | 2026-11-12                           |
 | Last amended | 2026-11-26                           |
-| Shipped      | inc. 1 — `f9d4af0` (merge `5a873ef`) · inc. 2 — merge `pending` |
+| Shipped      | inc. 1 — `f9d4af0` (merge `5a873ef`) · inc. 2 — `9295599` (merge `f06185f`) |
 
 ## The Requirement Sentences
 ### Task due date
@@ -28,7 +28,7 @@
 - T3. "2026-02-30" is rejected by the Zod schema — the date must be rejected, not rolled forward to 2026-03-02.
 - T4. A past date is accepted, stored, and returned unchanged.
 
-### Project — P1–P3 · shipped (merge pending)
+### Project — P1–P3 · shipped `9295599`
 - P1. A project created with no dueDate is accepted; the row stores NULL and reads back null.
 - P2. A project created with dueDate: "2026-11-30" reads back "2026-11-30" in SQL and prints `Due 2026-11-30` on the card.
 - P3. An edit that omits dueDate leaves the stored value unchanged. (Canary.)
