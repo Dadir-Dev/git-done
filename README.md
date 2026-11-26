@@ -300,7 +300,15 @@ git-done/
    app is still in development mode. `ensureAppUser` creates users on first
    request, so Preview does not need its own webhook endpoint.
 
-5. **Apply migrations to preview and production** before or during release — never `db push`:
+5. **Migrations run during the Vercel build** — never `db push`:
+
+   `vercel-build` runs `prisma migrate deploy` on production, and on preview
+   when the environment points at the `preview` branch (`NEON_BRANCH=preview`).
+   A preview build never migrates production: if the branch is anything else it
+   logs a warning and skips (`scripts/migrate-decision.mjs`).
+
+   Run it by hand only for a brand-new branch, or to apply migrations without a
+   deploy:
 
    ```powershell
    $env:DATABASE_URL = npx neonctl connection-string production --project-id <project-id>

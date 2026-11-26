@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "prisma generate --config prisma7.config.ts && node scripts/migrate-if-prod.mjs && next build",
+    "vercel-build": "prisma generate --config prisma7.config.ts && node scripts/migrate-on-deploy.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
