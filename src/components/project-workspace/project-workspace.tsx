@@ -56,6 +56,7 @@ export default function ProjectWorkspace({
       <ProjectHeader
         name={project.name}
         description={project.description}
+        dueDate={project.dueDate}
         onEditProject={() => setDialog("edit")}
         onAddTask={() => setDialog("task")}
         onDeleteProject={() => setDialog("delete")}

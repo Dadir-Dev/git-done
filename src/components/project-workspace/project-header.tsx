@@ -5,12 +5,14 @@ import Button from "@/src/components/ui/button";
 export default function ProjectHeader({
   name,
   description,
+  dueDate,
   onEditProject,
   onAddTask,
   onDeleteProject,
 }: {
   name: string;
   description: string | null;
+  dueDate: string | null;
   onEditProject: () => void;
   onAddTask: () => void;
   onDeleteProject: () => void;
@@ -50,6 +52,9 @@ export default function ProjectHeader({
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
               {description || "No description yet."}
             </p>
+            {dueDate && (
+              <p className="mt-1 text-xs text-zinc-500">Due {dueDate}</p>
+            )}
           </div>
 
           {/* delete project button */}

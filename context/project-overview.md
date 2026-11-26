@@ -339,9 +339,8 @@ Recorded so they are not lost. None block the MVP.
 
 1. **`getProjects()` has no pagination** — a `// TODO: Add pagination` marks it in `src/actions/project.actions.ts`.
 2. **N+1 completed-count queries** — `getProjects()` issues one `task.count()` per project inside `Promise.all`. Fine at current library sizes; replace with a single grouped count when project counts grow.
-3. **Migration history is baselined** — `prisma/migrations/20261111195000_init` records the existing schema. The `development`, `preview`, and `production` branches were baselined with `prisma migrate resolve --applied`; future schema changes should be generated on `development` with `npm run db:migrate` and promoted with `npm run db:deploy`.
-4. **`package.json` is named `project-tracker`** — the pre-rename identifier. Cosmetic, but worth correcting.
-5. **No automated test runner** is configured. See the quality gates in [coding standards](./coding-standards.md).
+3. **Migration history is baselined** — `prisma/migrations/20261111195000_init` records the existing schema. The `development`, `preview`, and `production` branches were baselined with `prisma migrate resolve --applied`; future schema changes should be generated on `development` with `npm run db:migrate`. Production and preview apply them during their Vercel builds (`vercel-build`), and `npm run db:deploy` remains the manual fallback.
+4. **Mutation actions return storage types, not wire types** — `createProject` / `updateProject` return `ActionResult<Project>`, so `data.dueDate` is a `Date | null` at runtime. This contradicts the rule in `src/types/index.ts` that a `Date` must never cross the action boundary, which `getProjectById` and `getProjects` honour by slicing to `YYYY-MM-DD`. No caller reads `data.dueDate` today, so it is latent, not live — but the same leak exists on the task side (increment 1), so fix it across every mutation action rather than only the two project ones: return a date-only DTO from each, as the read actions do. Raised in review of increment 2.
 
 ---
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dateOnlyWireSchema } from "./date-only.schema";
 
 export const createProjectSchema = z.object({
   name: z
@@ -11,6 +12,7 @@ export const createProjectSchema = z.object({
     .trim()
     .max(500, "Description must be less than 500 characters")
     .optional(),
+  dueDate: dateOnlyWireSchema.optional(),
 });
 
 export const updateProjectSchema = createProjectSchema.partial();

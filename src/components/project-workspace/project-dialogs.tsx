@@ -171,10 +171,13 @@ export default function ProjectDialogs({
             // Undefined is omitted by the partial update, preserving the saved description when blank.
             const description =
               String(form.get("description") ?? "") || undefined;
+            // Empty string is the control's "no date"; the schema maps it to null.
+            const dueDate = String(form.get("dueDate") ?? "");
 
             onUpdateProject({
               name,
               description,
+              dueDate,
             });
           }}
         >
@@ -187,6 +190,15 @@ export default function ProjectDialogs({
               required
               maxLength={100}
               className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3 text-sm text-zinc-100"
+            />
+          </label>
+          <label className="block text-sm font-medium text-zinc-300">
+            Due date
+            <input
+              type="date"
+              name="dueDate"
+              defaultValue={project.dueDate ?? ""}
+              className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3 text-sm text-zinc-100 scheme-dark"
             />
           </label>
           <label className="block text-sm font-medium text-zinc-300">

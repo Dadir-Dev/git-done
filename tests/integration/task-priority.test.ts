@@ -1,4 +1,12 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { prisma } from "@/src/lib/prisma";
 import { createTask, updateTask } from "@/src/actions/task.actions";
 
@@ -13,11 +21,14 @@ const PROJECT_ID = "project_integration_priority";
 const EMAIL = "integration-priority@example.test";
 
 beforeAll(async () => {
+  // Delete the project first: it may exist under a different owner, so deleting
+  // the user alone would leave it behind.
   await prisma.project.deleteMany({ where: { id: PROJECT_ID } });
   await prisma.user.deleteMany({
     where: { OR: [{ id: USER_ID }, { email: EMAIL }] },
   });
 
+  // Create the user before the project, because the project has a foreign key to the user.
   await prisma.user.create({
     data: {
       id: USER_ID,
@@ -54,6 +65,8 @@ describe("task priority — the DB default and the partial update", () => {
     expect(rows[0]?.priority).toBe("MEDIUM");
   });
 
+  // Canary: an edit that omits priority must not reset it. A Zod `.default()`
+  // would silently supply MEDIUM on the update.
   it("keeps priority when an edit omits it", async () => {
     const created = await createTask(PROJECT_ID, {
       title: "Priority kept",

@@ -149,6 +149,7 @@ Additive notes on the existing code:
 - **Migrations:**
   - `prisma db push` is acceptable **only against a local or disposable development database**.
   - Before any shared environment (staging or production), produce reviewed `prisma migrate` migration files committed under `prisma/migrations/`, apply them in order, and promote the same artefacts. Never point `db push` at a shared database.
+  - `vercel-build` applies them: production on production, preview on the `preview` branch only (`scripts/migrate-decision.mjs`). A preview build that points anywhere else skips and warns.
   - Migrations are immutable once shared or deployed.
   - `README.md` documents this same split in its database setup and deployment steps; keep the two in sync when the workflow changes.
 - Use transactions for multi-step invariants. Current write paths are single-row; wrap a future project-plus-tasks or status-plus-audit write in `prisma.$transaction`.

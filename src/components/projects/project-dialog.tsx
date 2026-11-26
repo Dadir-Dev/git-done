@@ -31,9 +31,10 @@ export default function ProjectDialog({
     const form = new FormData(event.currentTarget);
     const name = String(form.get("name") ?? "");
     const description = String(form.get("description") ?? "") || undefined;
+    const dueDate = String(form.get("dueDate") ?? "");
 
     startTransition(async () => {
-      const result = await createProject({ name, description });
+      const result = await createProject({ name, description, dueDate });
       if (!result.success) {
         setError(result.error);
         return;
@@ -90,6 +91,14 @@ export default function ProjectDialog({
             />
           </label>
           <label className="block text-sm font-medium text-zinc-300">
+            Due date <span className="font-normal text-zinc-500">optional</span>
+            <input
+              type="date"
+              name="dueDate"
+              className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#121214] px-3 text-sm text-zinc-100 scheme-dark focus:border-brand/80 focus:outline-none"
+            />
+          </label>
+          <label className="block text-sm font-medium text-zinc-300">
             Description{" "}
             <span className="font-normal text-zinc-500">optional</span>
             <textarea
@@ -106,10 +115,7 @@ export default function ProjectDialog({
             </p>
           )}
           <div className="flex justify-end gap-3 pt-2">
-            <Button
-              variant="quiet"
-              onClick={onClose}
-            >
+            <Button variant="quiet" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" loading={pending}>

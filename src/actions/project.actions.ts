@@ -34,11 +34,14 @@ export async function createProject(
 
   try {
     await ensureAppUser(userId);
+    const { dueDate, ...rest } = parsed.data;
 
     const project = await prisma.project.create({
       data: {
-        ...parsed.data,
+        ...rest,
         userId,
+        // The action owns the one conversion; the schema stays string-shaped.
+        dueDate: dueDate ? new Date(`${dueDate}T00:00:00.000Z`) : null,
       },
     });
 
@@ -86,6 +89,8 @@ export async function getProjectById(projectId: string): Promise<
         id: project.id,
         name: project.name,
         description: project.description,
+        dueDate:
+          project.dueDate ? project.dueDate.toISOString().slice(0, 10) : null,
         tasks: project.tasks.map((task) => ({
           id: task.id,
           title: task.title,
@@ -128,9 +133,17 @@ export async function updateProject(
   }
 
   try {
+    const { dueDate, ...rest } = parsed.data;
+    const data = {
+      ...rest,
+      ...(dueDate === undefined ?
+        {}
+      : { dueDate: dueDate ? new Date(`${dueDate}T00:00:00.000Z`) : null }),
+    };
+
     const project = await prisma.project.update({
       where: { id: projectId, userId },
-      data: parsed.data,
+      data,
     });
 
     revalidatePath("/dashboard");
@@ -209,6 +222,8 @@ export async function getProjects(): Promise<ActionResult<ProjectSummary[]>> {
         id: project.id,
         name: project.name,
         description: project.description,
+        dueDate:
+          project.dueDate ? project.dueDate.toISOString().slice(0, 10) : null,
         taskCount: project.taskCount,
         completedCount: project.completedCount,
       })),
