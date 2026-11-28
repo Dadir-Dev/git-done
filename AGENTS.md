@@ -10,6 +10,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # GitDone — Agent Instructions
 
+**Last Updated:** November 28, 2026
+
 These instructions are mandatory for every task in this repository, including small fixes and questions that lead to code changes. Read the required documents in full before planning, editing, or running commands that change the project.
 
 ## Required reading (in this order)
@@ -50,7 +52,7 @@ These are a quick reminder, not a replacement for `context/coding-standards.md`.
 - **Prisma v7 only**, with `@prisma/adapter-pg` and the cached singleton in `src/lib/prisma.ts`. Never edit `src/app/generated/prisma`. Never run `db push` against a shared database.
 - **Tailwind v4 CSS-first.** No `tailwind.config.*`. Use semantic tokens in `src/app/globals.css`. No shadcn/ui, no Radix, dark theme only.
 - **Accessibility is acceptance criteria.** Semantic elements, accessible names, `role="alert"` for async failures, `aria-busy` for pending controls, preserved `:focus-visible`, reduced-motion support.
-- **Verify before claiming done:** `npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run build`, plus manual browser verification of the affected flow. Unit tests live in `tests/unit/` and must not touch the database or auth; database-backed tests belong in `tests/integration/` (not set up yet — a manual DB check against real rows is the stand-in until it is).
+- **Verify before claiming done:** `npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run build`, plus manual browser verification of the affected flow. Unit tests live in `tests/unit/` and must not touch the database or auth; database-backed tests belong in `tests/integration/`. CI (`.github/workflows/ci.yml`) runs the typecheck, lint, and test steps on every pull request.
 - **Ask before committing.** Never commit or push without permission. Use conventional commit messages and one feature/fix per commit.
 - **Minimal, in-pattern changes.** Do not refactor unrelated code, add unrequested features, or delete files without confirmation.
 

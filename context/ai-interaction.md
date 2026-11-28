@@ -1,5 +1,7 @@
 # AI Interaction Guidelines
 
+**Last Updated:** November 28, 2026
+
 ## Context Documents
 
 Read these before changing anything:
@@ -25,7 +27,7 @@ This is the common workflow that we will use for every single feature/fix:
 1. **Document** - Document the feature in @context/current-feature.md.
 2. **Branch** - Create new branch for feature, fix, etc
 3. **Implement** - Implement the feature/fix that I create in @context/current-feature.md
-4. **Verify** - Verify it works in the browser. Run `npm run lint`, `npx tsc --noEmit`, and `npm run build`
+4. **Verify** - Verify it works in the browser. Run `npm run lint`, `npx tsc --noEmit`, `npm test`, and `npm run build`
 5. **Iterate** - Iterate and change things if needed
 6. **Commit** - Only after build passes and everything works
 7. **Merge** - Merge to main
@@ -35,7 +37,10 @@ This is the common workflow that we will use for every single feature/fix:
 
 Do NOT commit without permission and until the build and checks pass. If the build or checks fail, fix the issues first.
 
-> There is no test script in this project yet. Vitest is the intended runner once it is configured; until then the gate is lint, type-check, production build, and manual browser verification.
+> The gate is lint, type-check, tests, production build, and manual browser verification. Vitest
+> runs the unit suite (`tests/unit/`, no database or auth) and the database-backed integration
+> suite (`tests/integration/`). CI (`.github/workflows/ci.yml`) runs the same checks on every
+> pull request, so a green CI run is the merge gate.
 
 ## Branching
 

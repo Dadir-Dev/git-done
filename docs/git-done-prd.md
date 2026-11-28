@@ -1,8 +1,8 @@
 # Product Requirements Document: GitDone (MVP)
 
-**Status:** Completed MVP (Launch Ready)  
-**Owner:** Dadir Dev  
-**Last Updated:** October 2026  
+**Status:** Completed MVP (Launch Ready)
+**Owner:** Dadir Dev
+**Last Updated:** November 28, 2026
 **Live Demo:** [git-done-dadirdev.vercel.app](https://git-done-dadirdev.vercel.app/)
 
 ---
@@ -38,13 +38,14 @@ The MVP delivers a complete, production-ready experience featuring server-first 
 - **Recent Projects:** As a user, I want direct access to recently created/updated projects from the dashboard.
 
 ### Project Management (CRUD)
-- **Create Project:** As a user, I want to create a new project with a name and optional description via a modal dialog.
-- **Project List:** As a user, I want a dedicated projects view with real-time progress bars, completion counts, and direct links to workspaces.
-- **Edit Project:** As a user, I want to update project details without leaving the workspace.
+- **Create Project:** As a user, I want to create a new project with a name, optional description, and optional due date via a modal dialog.
+- **Project List:** As a user, I want a dedicated projects view with real-time progress bars, completion counts, due dates, and direct links to workspaces.
+- **Edit Project:** As a user, I want to update project details (including its due date) without leaving the workspace.
 - **Delete Project:** As a user, I want to safely delete a project with confirmation, cascading deletion cleanly to all its tasks.
 
 ### Focused Task Board
-- **Add Tasks:** As a user, I want to add actionable tasks (with title and optional description) directly in the project workspace.
+- **Add Tasks:** As a user, I want to add actionable tasks (with a title, optional description, optional due date, and priority) directly in the project workspace.
+- **Due Dates & Priority:** As a user, I want to record when a task is due and how important it is so that I can decide which task to do first.
 - **Status Sections:** As a user, I want tasks automatically grouped under clear status headers: **To Do**, **In Progress**, and **Complete**.
 - **Status Toggling & Inline Controls:** As a user, I want to change task status via dropdown or mark complete with instant UI updates.
 - **Filter Tabs:** As a user, I want to filter tasks by status (**All**, **To do**, **In progress**, **Complete**) for quick focus.
@@ -60,10 +61,11 @@ The MVP delivers a complete, production-ready experience featuring server-first 
 | **Auth** | Clerk authentication (`/sign-in`, `/sign-up`), `auth.protect()` server-side layout guards, customized dark UI components |
 | **User Sync** | Dual-layer sync: Svix-verified webhook (`/api/webhooks/clerk`) + JIT fallback (`ensureAppUser`) |
 | **Dashboard** | Workspace summary cards (Projects count, Tasks completed ratio, Overall progress %) + Recent projects list |
-| **Projects** | Full CRUD with Zod validation, responsive list view, progress indicators, and modal dialogs |
-| **Tasks** | Full CRUD, grouped status sections (To Do / In Progress / Complete), instant status change, and client-side status filter tabs |
+| **Projects** | Full CRUD with Zod validation, responsive list view, progress indicators, optional due dates, and modal dialogs |
+| **Tasks** | Full CRUD, grouped status sections (To Do / In Progress / Complete), instant status change, optional due dates, a `LOW`/`MEDIUM`/`HIGH` priority, and client-side status filter tabs |
 | **Data Isolation** | Strict user ownership enforced at both query and database schema level |
 | **Design & UI** | Tailored dark UI system with Emerald brand accents (`#34D399`), responsive sidebar/sheet navigation, and accessibility features |
+| **Quality** | Vitest unit and integration suites, plus a GitHub Actions CI workflow (typecheck, lint, test) on every pull request |
 
 ---
 
@@ -72,8 +74,8 @@ The MVP delivers a complete, production-ready experience featuring server-first 
 The following capabilities are intentionally deferred for future releases based on user feedback:
 
 - ⏳ **Drag-and-Drop Task Board:** Interactive Kanban column dragging.
-- ⏳ **Due Dates & Milestones:** Target completion dates with overdue highlights.
-- ⏳ **Tags & Labels:** Categorization by topic, priority, or tech stack.
+- ⏳ **Milestones & Overdue Highlights:** Due dates shipped; the milestone layer and overdue styling on top of them did not.
+- ⏳ **Tags & Labels:** Categorization by topic or tech stack. (Priority shipped; free-form labels did not.)
 - ⏳ **Search & Sort:** Quick search across all projects and tasks.
 - ⏳ **Team / Shared Workspaces:** Collaboration, role permissions, and shared projects.
 - ⏳ **Activity Log & History:** Audit trail of completed tasks and project changes.
@@ -88,6 +90,8 @@ The following capabilities are intentionally deferred for future releases based 
 - **Performance:** Server-side rendered pages with instant Server Action mutations and Next.js path revalidation.
 - **Security & Multi-Tenancy:** Hard data isolation via Clerk `userId` foreign keys on all PostgreSQL queries.
 - **Reliability:** Prisma Pg adapter pooling over Neon Serverless Postgres with graceful error handling.
+- **Data Integrity:** Calendar dates are validated as real `YYYY-MM-DD` days before storage; enums constrain status and priority.
+- **Testability:** Vitest unit and integration suites run locally and in CI on every pull request.
 - **Accessibility:** Semantic HTML, ARIA dialog roles, keyboard focus rings (`--brand-focus`), and `prefers-reduced-motion` support.
 
 ---
@@ -98,6 +102,9 @@ All MVP success criteria have been met and verified:
 1. ✅ User sign-up and sign-in with persistent sessions.
 2. ✅ Project creation, editing, and deletion with zero data leakage.
 3. ✅ Task addition, status transitions, and deletion with instant revalidation.
-4. ✅ Accurate progress calculations displayed on the dashboard and project cards.
-5. ✅ Production deployment verified on Vercel with Neon PostgreSQL.
+4. ✅ Optional due dates on projects and tasks, validated as real calendar days and round-tripped as `YYYY-MM-DD`.
+5. ✅ Task priority (`LOW` / `MEDIUM` / `HIGH`) with a `MEDIUM` default.
+6. ✅ Accurate progress calculations displayed on the dashboard and project cards.
+7. ✅ Unit and integration tests pass locally and in CI.
+8. ✅ Production deployment verified on Vercel with Neon PostgreSQL.
 

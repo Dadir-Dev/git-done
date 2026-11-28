@@ -2,6 +2,8 @@
 
 > The engineering conventions for GitDone. This document implements the technical decisions in [the project overview](./project-overview.md); if a conflict appears, update both documents in the same change, or explicitly record the decision. The authoritative architecture reference is [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) and the visual language is [`UI_DESIGN_SYSTEM.md`](../UI_DESIGN_SYSTEM.md).
 
+**Last Updated:** November 28, 2026
+
 ## Guiding rules
 
 1. **Secure ownership first.** Every protected read and mutation is scoped to the authenticated Clerk user inside the query itself.
@@ -68,9 +70,25 @@ src/
   lib/
     prisma.ts              # PrismaClient + adapter-pg singleton
     ensure-app-user.ts     # JIT user synchronization fallback
-    validations/           # Zod schemas per feature
+    validations/           # Zod schemas per feature (incl. shared date-only.schema.ts)
   proxy.ts                 # Clerk middleware (webhook bypass + matcher)
   types/                   # cross-feature public types (ActionResult, ProjectSummary)
+```
+
+Outside `src/`:
+
+```text
+prisma/
+  schema.prisma            # Prisma schema — the single source of truth
+  seed.ts                  # Development/preview seed data
+  migrations/              # Committed migration files (never edit a deployed one)
+scripts/                   # Deploy-time migration decision & runner
+tests/
+  unit/                    # Schema & pure-logic tests (no database, no auth)
+  integration/             # Database-backed Server Action tests
+  setup.ts                 # Loads .env.test / .env for the test run
+vitest.config.ts           # Vitest configuration
+.github/workflows/ci.yml   # Typecheck, lint, and test on every pull request
 ```
 
 - Co-locate feature-specific types with their feature (`src/components/project-workspace/types.ts`). Reserve `src/types/` for genuinely cross-feature contracts.
@@ -215,13 +233,16 @@ Additive notes on the existing code:
 
 ## Testing and quality gates
 
-- **Automated tests are not configured yet.** Vitest (`*.test.ts` / `*.test.tsx`, co-located with their subject) is the intended runner once it is added; do not describe a test suite that does not exist.
-- Until then, the required gate before a pull request is:
+- **Vitest is the runner.** Configuration is `vitest.config.ts` (Node environment, `tests/**/*.test.ts`, `tests/setup.ts`). `npm test` runs the suite once; `npm run test:watch` watches.
+- **Unit tests (`tests/unit/`)** cover pure logic and Zod schema behaviour and must not touch the database or auth. **Integration tests (`tests/integration/`)** exercise Server Actions against a real Postgres, mocking only the external boundaries (Clerk `auth`, `next/cache`). `tests/setup.ts` loads `.env.test` (falling back to `.env`); shell variables win over both.
+- The required gate before a pull request is:
   1. `npm run lint`
   2. `npx tsc --noEmit`
-  3. `npm run build`
-  4. Manual verification of the affected flow in the browser — create, edit, re-status, filter, and delete
-- When Vitest is introduced, prioritize: Zod schema behaviour, ownership scoping (a non-owner must not read or mutate a record), the `ActionResult` contract for each action, and webhook idempotency. Mock external boundaries (Clerk, Prisma) — never the business rule under test.
+  3. `npm test`
+  4. `npm run build`
+  5. Manual verification of the affected flow in the browser — create, edit, re-status, filter, and delete
+- CI (`.github/workflows/ci.yml`) runs steps 1–3 against a disposable `postgres:17` service on every pull request and push to `main`. Treat a green run as the merge gate.
+- Keep prioritizing: Zod schema behaviour, ownership scoping (a non-owner must not read or mutate a record), the `ActionResult` contract for each action, and webhook idempotency. Mock external boundaries (Clerk, Prisma) — never the business rule under test.
 - No commented-out code, unused imports or variables, dead feature flags, or ignored errors.
 - When a fix reveals a systemic cause, fix the cause rather than adding a branch for the symptom.
 - Aim for functions under roughly 50 lines when that improves clarity. Extract coherent operations, but do not fragment straightforward code to hit a number.
@@ -234,6 +255,6 @@ Additive notes on the existing code:
 - [ ] A schema change updates `prisma/schema.prisma`, regenerates the client, and — if it targets a shared environment — includes reviewed migration files rather than a `db push`.
 - [ ] Webhook, auth, or middleware changes preserve signature verification and the webhook bypass in `src/proxy.ts`.
 - [ ] Loading, empty, error, keyboard, and narrow-mobile states were considered; pending controls expose `aria-busy`.
-- [ ] Lint, type-check, and build pass, and the affected flow was verified in the browser.
+- [ ] Lint, type-check, tests (`npm test`), and build pass, and the affected flow was verified in the browser.
 - [ ] No secrets, session tokens, or generated-client edits are included.
 - [ ] `project-overview.md` was updated if this changes a documented product or architectural decision.

@@ -1,5 +1,7 @@
 # GitDone UI Design System
 
+**Last Updated:** November 28, 2026
+
 ## Direction
 
 GitDone is a calm, dark workspace for moving meaningful work to done. It takes cues from Linear's density, clarity, and restrained emerald emphasis, with a warmer Notion-like sense of a personal workspace. The interface is deliberate rather than decorative: content leads, controls recede, and subtle borders provide structure.
@@ -34,6 +36,8 @@ The design philosophy avoids visual noise and excessive animation, keeping the d
 
 > [!NOTE]
 > Semantic color must always be paired with an icon or clear text label. Accent colors are reserved for actionable targets and current selections, never large decorative backgrounds.
+>
+> Task priority and due dates are plain metadata (`text-zinc-500`); they are not color-coded. Status remains the only status dimension that carries a colored indicator.
 
 ---
 
@@ -86,14 +90,15 @@ The design philosophy avoids visual noise and excessive animation, keeping the d
 
 ### 3. Projects List (`/projects`)
 - Header with project count badge and primary `+ New project` modal trigger.
-- Clean stacked list view: project title, description, task completion fraction, visual progress bar, and navigation chevron.
+- Clean stacked list view: project title, description, optional due date (`Due YYYY-MM-DD`), task completion fraction, visual progress bar, and navigation chevron.
 - Thoughtful empty state with direct action when zero projects exist.
 
 ### 4. Project Workspace & Task Board (`/projects/[id]`)
-- **Header:** Back navigation link, project title, description, and quick-action buttons (`+ Add task`, `Edit`, `Delete`).
+- **Header:** Back navigation link, project title, description, optional project due date (`Due YYYY-MM-DD`), and quick-action buttons (`+ Add task`, `Edit`, `Delete`).
 - **Filter Tabs:** Segmented pill controls to filter view by `All`, `To do`, `In progress`, and `Complete`.
 - **Status Sections:** Automatic grouping of tasks with status indicator dots, strike-through styling on completion, inline status dropdown selector, and delete trigger.
-- **Project Dialogs:** Contained modal overlays for adding tasks, editing project metadata, and confirming project deletion.
+- **Task Metadata:** Each task row can show `Due YYYY-MM-DD` and `Priority: HIGH|MEDIUM|LOW` as plain `text-zinc-500` lines beneath the title/description. Neither is color-coded.
+- **Project Dialogs:** Contained modal overlays for adding tasks (title, due date, priority, details), editing project metadata (name, due date, description), and confirming project deletion.
 
 ---
 

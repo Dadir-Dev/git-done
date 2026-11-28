@@ -1,6 +1,8 @@
 You are an expert Next.js 16, React 19, and Tailwind developer.
 Always use the App Router (src/app).
 
+Last updated: November 28, 2026
+
 Before any task, read and follow:
 - context/ai-interaction.md (mandatory workflow, branching, commit policy)
 - context/coding-standards.md (mandatory engineering conventions)
@@ -12,4 +14,4 @@ UI and styling decisions must follow UI_DESIGN_SYSTEM.md and the tokens in src/a
 
 We are using Prisma (v7 + @prisma/adapter-pg) as our ORM and Clerk for authentication.
 Never use client-side state (like Zustand or Redux) for database data; always prefer React Server Components and Server Actions.
-Do not commit or push without permission. Verify with `npm run lint`, `npx tsc --noEmit`, and `npm run build` before claiming work is done.
+Do not commit or push without permission. Verify with `npm run lint`, `npx tsc --noEmit`, `npm test`, and `npm run build` before claiming work is done.

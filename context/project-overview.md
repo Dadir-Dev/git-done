@@ -7,6 +7,8 @@
 > [!NOTE]
 > This is the product-level context document. The engineering detail lives in [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md), the product requirements live in [`docs/git-done-prd.md`](../docs/git-done-prd.md), and the visual language lives in [`UI_DESIGN_SYSTEM.md`](../UI_DESIGN_SYSTEM.md). If a decision here conflicts with one of those, update both in the same change.
 
+**Last Updated:** November 28, 2026
+
 ---
 
 ## Product vision
@@ -49,20 +51,21 @@ The primary persona checks the workspace from a laptop and occasionally from a p
 | **Auth** | Clerk email/social sign-in and sign-up at `/sign-in` and `/sign-up`, dark-themed, with server-side route protection |
 | **User sync** | Dual-layer identity sync: Svix-verified Clerk webhook plus just-in-time fallback |
 | **Dashboard** | Workspace summary — total projects, completed/total tasks, overall completion percentage — plus a recent-projects list |
-| **Projects** | Full CRUD with Zod validation, a responsive list with live progress bars, and modal dialogs |
-| **Tasks** | Full CRUD, automatic grouping by status, inline status change, and client-side status filter tabs |
+| **Projects** | Full CRUD with Zod validation, a responsive list with live progress bars, optional due dates, and modal dialogs |
+| **Tasks** | Full CRUD, automatic grouping by status, inline status change, optional due dates, a `LOW`/`MEDIUM`/`HIGH` priority, and client-side status filter tabs |
 | **Isolation** | Ownership enforced at the query level for every read and write |
 | **UI** | Dark design system with emerald brand accents, persistent desktop sidebar, mobile navigation sheet, accessible dialogs |
+| **Quality** | Vitest unit and integration suites plus a GitHub Actions CI workflow that typechecks, lints, and tests every pull request |
 
 ### Core workflows
 
 | Workflow | Outcome |
 | --- | --- |
-| Create | Open a modal, give a project a name and optional description. |
-| Plan | Add tasks with a title and optional description directly inside a project. |
+| Create | Open a modal, give a project a name and optional description and due date. |
+| Plan | Add tasks with a title, optional description, due date, and priority directly inside a project. |
 | Execute | Move tasks through **To Do → In Progress → Complete** from a status control or dropdown. |
-| Review | Filter the board by status; read overall progress on the dashboard and the projects list. |
-| Maintain | Edit project metadata, rename or re-describe a task, or delete either with confirmation. |
+| Review | Filter the board by status; read due dates and priorities on the task rows; read overall progress on the dashboard and the projects list. |
+| Maintain | Edit project metadata (including its due date), rename or re-describe a task, or delete either with confirmation. |
 | Remove | Delete a project with a confirmation step; its tasks are cascade-deleted. |
 
 ### Task status
@@ -77,6 +80,23 @@ Status is the only workflow dimension. It is a fixed enum — users cannot add s
 
 > [!NOTE]
 > Status is never signalled by color alone — each status carries a text label in its dropdown and a distinct indicator.
+
+### Task priority
+
+Priority is a second, optional task attribute. Like status it is a fixed enum — users pick a value, they cannot define one.
+
+| Priority | Meaning | Visual |
+| --- | --- | --- |
+| `LOW` | Nice to do, not time-sensitive | Plain metadata text |
+| `MEDIUM` | Normal default | Plain metadata text |
+| `HIGH` | Do this first | Plain metadata text |
+
+> [!NOTE]
+> Priority defaults to `MEDIUM` and is rendered as plain text (`Priority: HIGH`), not as a color-coded badge. Unlike status, it is never the only signal for anything — it is supplementary ordering information.
+
+### Task and project due dates
+
+Both `tasks.dueDate` and `projects.dueDate` are optional calendar days, stored as a date-only column (`@db.Date`) and carried over the wire as a `YYYY-MM-DD` string. A blank input maps to `null`. Overdue styling and reminders are not part of the MVP.
 
 ### Routes
 
@@ -97,8 +117,8 @@ All `/dashboard` and `/projects` routes are protected server-side by `await auth
 These are deliberately **not built**. Do not assume or scaffold them without a product decision:
 
 - Drag-and-drop task board (Kanban column dragging)
-- Due dates and milestones
-- Labels, tags, and priorities
+- Milestones, overdue highlighting, and reminder-style planning (due dates shipped; the surrounding planning layer did not)
+- Labels, tags, and richer categorization beyond priority (priority shipped; free-form labels did not)
 - Search and sorting across projects and tasks
 - Shared or team workspaces, roles, and permissions
 - Activity log and audit history
@@ -163,15 +183,15 @@ erDiagram
   PROJECTS ||--o{ TASKS : contains
 ```
 
-Three tables, two cascading one-to-many relationships, one enum. That is the entire schema.
+Three tables, two cascading one-to-many relationships, two enums (`TaskStatus`, `TaskPriority`). That is the entire schema.
 
 ### Model decisions
 
 | Model | Key fields and constraints |
 | --- | --- |
 | `users` | `id` is Clerk's user ID used directly as the primary key (`user_2abc…`) — no separate internal ID and no lookup indirection. `email` is unique. `name` and `imageUrl` are optional mirrors of Clerk profile data. |
-| `projects` | `id` is a `cuid()`. `name` required, `description` optional. `userId` → `users.id` with `onDelete: Cascade`. |
-| `tasks` | `id` is a `cuid()`. `title` required, `description` optional, `status` is `TaskStatus` defaulting to `TODO`. `projectId` → `projects.id` with `onDelete: Cascade`. |
+| `projects` | `id` is a `cuid()`. `name` required, `description` optional, `dueDate` optional (`@db.Date`). `userId` → `users.id` with `onDelete: Cascade`. |
+| `tasks` | `id` is a `cuid()`. `title` required, `description` optional, `dueDate` optional (`@db.Date`), `status` is `TaskStatus` defaulting to `TODO`, `priority` is `TaskPriority` defaulting to `MEDIUM`. `projectId` → `projects.id` with `onDelete: Cascade`. |
 
 Additional design decisions:
 
@@ -191,6 +211,12 @@ enum TaskStatus {
   COMPLETE
 }
 
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model User {
   id        String   @id // Clerk userId, used as-is — no separate internal ID
   email     String   @unique
@@ -207,17 +233,18 @@ model User {
 }
 
 model Project {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String?
+  dueDate     DateTime? @db.Date
 
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   tasks       Task[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([userId])
   @@index([userId, createdAt]) // supports dashboard "most recent first" queries
@@ -225,16 +252,18 @@ model Project {
 }
 
 model Task {
-  id          String     @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus @default(TODO)
+  dueDate     DateTime?    @db.Date
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
 
   projectId   String
-  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@index([projectId])
   @@index([projectId, status]) // supports "tasks by status within project" queries
@@ -269,13 +298,16 @@ sequenceDiagram
 - **Shell:** fixed 250px desktop sidebar (`lg:` breakpoint and above); a slide-out navigation sheet below it.
 - **Dashboard:** metric stat cards (projects, completed/total tasks, progress percentage) over a recent-projects list.
 - **Projects list:** stacked rows with name, description, completion fraction, and a progress bar; a designed empty state when nothing exists.
-- **Project workspace:** header with back navigation and `Add task` / `Edit` / `Delete`; segmented filter tabs (`All`, `To do`, `In progress`, `Complete`); tasks grouped under status sections with an inline status dropdown and a delete control.
+- **Project workspace:** header with back navigation, the project due date, and `Add task` / `Edit` / `Delete`; segmented filter tabs (`All`, `To do`, `In progress`, `Complete`); tasks grouped under status sections with an inline status dropdown, a due date, a priority, and a delete control.
 - **Dialogs:** project/task forms and delete confirmation render as contained modals with `role="dialog"`.
 - **Feedback:** pending actions disable their button and expose `aria-busy` via `useTransition`; read failures render a `role="alert"` panel with a retry (`ReadErrorState`); route-level `loading.tsx` and `error.tsx` cover suspense and failure states.
 
 ## Design references
 
 The approved interface, matching [`UI_DESIGN_SYSTEM.md`](../UI_DESIGN_SYSTEM.md):
+
+> [!NOTE]
+> The screenshots below were captured before the due date and priority UI shipped. They need recapturing from the running app to show the current task rows and dialogs.
 
 ### Dashboard overview
 
@@ -318,19 +350,29 @@ The approved interface, matching [`UI_DESIGN_SYSTEM.md`](../UI_DESIGN_SYSTEM.md)
 - Shared `Button` component with typed variant and size maps.
 - Responsive logo delivery and design-system documentation.
 
+### Phase 3 — planning signals and quality ✅
+
+- Optional task and project due dates, carried as a `YYYY-MM-DD` wire value and shared through `dateOnlyWireSchema`.
+- Task priority (`LOW` / `MEDIUM` / `HIGH`) on the task model, Add-task dialog, and task card.
+- Vitest unit and integration suites, plus a GitHub Actions CI workflow that typechecks, lints, and tests every pull request.
+- Deploy-time migrations through `scripts/migrate-on-deploy.mjs` (production migrates production; preview migrates only its own branch).
+
 ### Post-MVP (not started)
 
-The [deferred list](#explicitly-deferred) above, prioritized by demand. Drag-and-drop and due dates are the strongest candidates.
+The [deferred list](#explicitly-deferred) above, prioritized by demand. Drag-and-drop and the milestone/overdue layer on top of due dates are the strongest candidates.
 
 ## Acceptance checks for the MVP
 
 - ✅ A signed-in user can create, edit, and delete projects, and add, re-status, and delete tasks.
 - ✅ Tasks group automatically under To Do / In Progress / Complete and can be filtered by status.
+- ✅ A task or project can carry an optional due date that round-trips as `YYYY-MM-DD`, and an invalid calendar day (`2026-02-30`) is rejected rather than rolled forward.
+- ✅ A task carries a priority (`LOW` / `MEDIUM` / `HIGH`) that defaults to `MEDIUM` and renders as text.
 - ✅ A user cannot retrieve or mutate a project or task outside their ownership scope.
 - ✅ Deleting a project cascades to its tasks; deleting the user cascades to both.
 - ✅ Progress figures are computed from live task data, not a stored counter.
 - ✅ Sessions are enforced server-side — no client-side flash for unauthenticated users.
 - ✅ The primary flows work with keyboard, semantic landmarks, narrow mobile widths, and reduced-motion preferences.
+- ✅ The unit and integration suites pass locally and in CI.
 - ✅ Production deployment verified on Vercel against Neon PostgreSQL.
 
 ## Known follow-ups and discrepancies
@@ -340,7 +382,7 @@ Recorded so they are not lost. None block the MVP.
 1. **`getProjects()` has no pagination** — a `// TODO: Add pagination` marks it in `src/actions/project.actions.ts`.
 2. **N+1 completed-count queries** — `getProjects()` issues one `task.count()` per project inside `Promise.all`. Fine at current library sizes; replace with a single grouped count when project counts grow.
 3. **Migration history is baselined** — `prisma/migrations/20261111195000_init` records the existing schema. The `development`, `preview`, and `production` branches were baselined with `prisma migrate resolve --applied`; future schema changes should be generated on `development` with `npm run db:migrate`. Production and preview apply them during their Vercel builds (`vercel-build`), and `npm run db:deploy` remains the manual fallback.
-4. **Mutation actions return storage types, not wire types** — `createProject` / `updateProject` return `ActionResult<Project>`, so `data.dueDate` is a `Date | null` at runtime. This contradicts the rule in `src/types/index.ts` that a `Date` must never cross the action boundary, which `getProjectById` and `getProjects` honour by slicing to `YYYY-MM-DD`. No caller reads `data.dueDate` today, so it is latent, not live — but the same leak exists on the task side (increment 1), so fix it across every mutation action rather than only the two project ones: return a date-only DTO from each, as the read actions do. Raised in review of increment 2.
+4. **Mutation actions return storage types, not wire types** — `createProject` / `updateProject` return `ActionResult<Project>` and `createTask` / `updateTask` / `updateTaskStatus` return `ActionResult<Task>`, so `data.dueDate` is a `Date | null` at runtime. This contradicts the rule in `src/types/index.ts` that a `Date` must never cross the action boundary, which the read actions (`getProjectById`, `getProjects`) honour by slicing to `YYYY-MM-DD`. No caller reads the returned `dueDate` today, so it is latent rather than live — but it is latent on both the project and the task side now that both carry a date. Fix it across every mutation action at once: return a date-only DTO from each, as the read actions do. Raised in review of the project-dueDate increment.
 
 ---
 

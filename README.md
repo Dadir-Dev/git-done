@@ -23,6 +23,8 @@
   </p>
 </div>
 
+<p align="center"><em>Last Updated: November 28, 2026</em></p>
+
 ---
 
 ## 📖 Overview
@@ -50,19 +52,21 @@ The MVP includes the core workflow for managing meaningful work end-to-end:
 
 - Project creation, editing, and deletion with user-scoped data isolation
 - Task creation, status updates, filtering, and deletion
+- Optional due dates on projects and tasks, plus `LOW` / `MEDIUM` / `HIGH` task priority
 - Kanban-style status grouping for **To Do**, **In Progress**, and **Complete**
 - Dashboard overview with workspace metrics and recent project activity
 - Secure authentication and protected app routes with Clerk
 - Responsive dark UI optimized for desktop and mobile workflows
 - Neon + Prisma backend with server-first data handling and cache revalidation
+- Vitest unit and integration tests, gated by a GitHub Actions CI workflow
 
 ### 🚀 Planned Roadmap
 
 The immediate next phase is focused on deeper workflow and collaboration features:
 
 - Drag-and-drop task board interactions
-- Due dates, milestones, and reminder-style planning
-- Labels, priorities, and richer task categorization
+- Milestones, overdue highlighting, and reminder-style planning (due dates already shipped)
+- Labels and richer task categorization (priority already shipped)
 - Search, sorting, and enhanced filtering across projects and tasks
 - Shared workspaces and multi-user collaboration
 - Activity history, audit trails, and richer project insights
@@ -73,6 +77,9 @@ The immediate next phase is focused on deeper workflow and collaboration feature
 ---
 
 ## Interface Preview
+
+> [!NOTE]
+> The screenshots below were captured before the due date and priority UI shipped. They need recapturing from the running app.
 
 ### Dashboard Overview
 > *At-a-glance workspace statistics: total projects, completed task counts, overall completion rate, and recent projects.*
@@ -103,6 +110,7 @@ The immediate next phase is focused on deeper workflow and collaboration feature
 | **ORM**            | [Prisma v7](https://www.prisma.io/)              | `@prisma/adapter-pg` driver adapter architecture           |
 | **Authentication** | [Clerk](https://clerk.com/)                      | Social & email auth, session management, Webhooks          |
 | **Validation**     | [Zod v4](https://zod.dev/)                       | Schema validation for all server mutations                 |
+| **Testing**        | [Vitest](https://vitest.dev/)                    | Unit and integration tests, run in CI on every pull request |
 | **Icons**          | [Lucide React](https://lucide.dev/)              | Accessible icon system                                     |
 
 ---
@@ -146,7 +154,6 @@ Create a `.env` file for local development:
 # ── Database (Neon PostgreSQL) ──
 # Local app traffic may use the direct URL. Deployed environments use the pooled URL.
 DATABASE_URL="postgresql://<user>:<password>@<neon-direct-host>/neondb?sslmode=require&channel_binding=require"
-DATABASE_URL_POOLED="postgresql://<user>:<password>@<neon-pooler-host>/neondb?sslmode=require&channel_binding=require"
 DATABASE_URL_UNPOOLED="postgresql://<user>:<password>@<neon-direct-host>/neondb?sslmode=require&channel_binding=require"
 DIRECT_URL="postgresql://<user>:<password>@<neon-direct-host>/neondb?sslmode=require&channel_binding=require"
 NEON_BRANCH="development"
@@ -225,7 +232,18 @@ npm run db:deploy
 > them on `development` with `prisma migrate dev`, review the SQL, and promote the same
 > artifacts to every environment. Migrations are immutable once shared or deployed.
 
-### 5. Start the Development Server
+### 5. Run the Tests
+
+Vitest runs the unit suite with no database; the integration suite needs a real Postgres. Point `DATABASE_URL` at a disposable database (or provide a `.env.test` file) before running the integration tests:
+
+```bash
+npm test          # run once
+npm run test:watch
+```
+
+Unit tests live in `tests/unit/` and must not touch the database or auth; database-backed tests live in `tests/integration/`.
+
+### 6. Start the Development Server
 
 ```bash
 npm run dev
@@ -240,8 +258,17 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```
 git-done/
 ├── prisma/
-│   └── schema.prisma            # Prisma schema (User, Project, Task models)
+│   ├── schema.prisma            # Prisma schema (User, Project, Task models + enums)
+│   ├── seed.ts                  # Development/preview seed data
+│   └── migrations/              # Committed migration files
 ├── prisma7.config.ts            # Prisma 7 driver adapter & database configuration
+├── scripts/                     # Deploy-time migration decision & runner
+├── tests/
+│   ├── unit/                    # Schema & pure-logic tests (no DB, no auth)
+│   ├── integration/             # Database-backed Server Action tests
+│   └── setup.ts                 # Loads .env.test / .env for the test run
+├── .github/workflows/ci.yml     # Typecheck, lint, and test on every PR
+├── vitest.config.ts             # Vitest configuration
 ├── public/                      # Static assets, logo, screenshots
 ├── src/
 │   ├── actions/                 # Next.js Server Actions ("use server")
@@ -261,7 +288,7 @@ git-done/
 │   ├── lib/
 │   │   ├── ensure-app-user.ts   # JIT fallback user synchronization
 │   │   ├── prisma.ts            # Prisma client singleton with @prisma/adapter-pg
-│   │   └── validations/         # Zod schemas for input validation
+│   │   └── validations/         # Zod schemas (incl. shared date-only wire schema)
 │   ├── proxy.ts                 # Clerk middleware configuration
 │   └── types/                   # Shared TypeScript definitions
 ```
@@ -291,7 +318,6 @@ git-done/
    | Variable | Production | Preview |
    | --- | --- | --- |
    | `DATABASE_URL` | `production` pooled | `preview` pooled |
-   | `DATABASE_URL_POOLED` | `production` pooled | `preview` pooled |
    | `DATABASE_URL_UNPOOLED` | `production` direct | `preview` direct |
    | `NEON_BRANCH` | `production` | `preview` |
    | Clerk keys | Development instance | Development instance |
@@ -302,10 +328,12 @@ git-done/
 
 5. **Migrations run during the Vercel build** — never `db push`:
 
-   `vercel-build` runs `prisma migrate deploy` on production, and on preview
-   when the environment points at the `preview` branch (`NEON_BRANCH=preview`).
-   A preview build never migrates production: if the branch is anything else it
-   logs a warning and skips (`scripts/migrate-decision.mjs`).
+   `vercel-build` runs `prisma generate`, then `scripts/migrate-on-deploy.mjs`,
+   then `next build`. The runner applies `prisma migrate deploy` on production,
+   and on preview only when the environment points at the `preview` branch
+   (`NEON_BRANCH=preview`). A preview build never migrates production: if the
+   branch is anything else it logs a warning and skips. The decision itself lives
+   in `scripts/migrate-decision.mjs` (`shouldMigrate`).
 
    Run it by hand only for a brand-new branch, or to apply migrations without a
    deploy:
@@ -318,6 +346,12 @@ git-done/
 
 6. **Deploy:** Click **Deploy**. Vercel builds Production from `main` and Preview
    from every other branch or pull request.
+
+### Continuous Integration
+
+Every pull request and push to `main` runs `.github/workflows/ci.yml`, which spins up a
+disposable `postgres:17` service and then typechecks (`npx tsc --noEmit`), lints
+(`npm run lint`), and tests (`npm test`). Treat a green CI run as the merge gate.
 
 ### Moving Clerk to production later
 
